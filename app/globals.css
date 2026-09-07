@@ -347,6 +347,98 @@ h1 {
   }
 
   .restaurantGrid {
+    
     grid-template-columns: 1fr;
   }
+} 
+/* ===== MODAL NOVO RESTAURANTE ===== */
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 9999;
+}
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 26px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+}
+
+.modalHeader h2 {
+  margin-top: 5px;
+  font-size: 25px;
+}
+
+.closeModal {
+  border: 0;
+  background: #f3f4f6;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 25px;
+}
+
+.modal label {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 18px;
+}
+
+.modal label input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  outline: none;
+}
+
+.modal label input:focus {
+  border-color: #6d5dfc;
+}
+
+.formHint {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 18px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.modalActions button {
+  padding: 12px 17px;
+  border-radius: 11px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-weight: 700;
+}
+
+.modalActions .saveRestaurant {
+  background: #6d5dfc;
+  border-color: #6d5dfc;
+  color: white;
 }
