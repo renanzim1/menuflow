@@ -16,10 +16,15 @@ export default function EditorRestaurante() {
   const [restaurante, setRestaurante] = useState(null);
   const [categorias, setCategorias] = useState([]);
   const [produtos, setProdutos] = useState([]);
+  const [gruposAdicionais, setGruposAdicionais] = useState([]);
+  const [adicionais, setAdicionais] = useState([]);
+
   const [tela, setTela] = useState('inicio');
 
+  // Categorias
   const [novaCategoria, setNovaCategoria] = useState('');
 
+  // Produtos
   const [nomeProduto, setNomeProduto] = useState('');
   const [descricaoProduto, setDescricaoProduto] = useState('');
   const [precoProduto, setPrecoProduto] = useState('');
@@ -27,21 +32,27 @@ export default function EditorRestaurante() {
   const [fotoProduto, setFotoProduto] = useState(null);
   const [destaqueProduto, setDestaqueProduto] = useState(false);
 
-  const [gruposAdicionais, setGruposAdicionais] = useState([]);
-const [adicionais, setAdicionais] = useState([]);
+  // Adicionais
+  const [produtoAdicional, setProdutoAdicional] = useState('');
+  const [nomeGrupo, setNomeGrupo] = useState('');
+  const [grupoObrigatorio, setGrupoObrigatorio] = useState(false);
+  const [maxSelecoes, setMaxSelecoes] = useState('1');
 
-const [produtoAdicional, setProdutoAdicional] = useState('');
-const [nomeGrupo, setNomeGrupo] = useState('');
-const [grupoObrigatorio, setGrupoObrigatorio] = useState(false);
-const [maxSelecoes, setMaxSelecoes] = useState('1');
+  const [grupoSelecionado, setGrupoSelecionado] = useState('');
+  const [nomeAdicional, setNomeAdicional] = useState('');
+  const [precoAdicional, setPrecoAdicional] = useState('');
 
-const [grupoSelecionado, setGrupoSelecionado] = useState('');
-const [nomeAdicional, setNomeAdicional] = useState('');
-const [precoAdicional, setPrecoAdicional] = useState('');
+  // Aparência
   const [logoUrl, setLogoUrl] = useState('');
-const [coverUrl, setCoverUrl] = useState('');
-const [corPrimaria, setCorPrimaria] = useState('#6d5dfc');
-const [corSecundaria, setCorSecundaria] = useState('#111827');
+  const [coverUrl, setCoverUrl] = useState('');
+  const [logoArquivo, setLogoArquivo] = useState(null);
+  const [coverArquivo, setCoverArquivo] = useState(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  const [coverPreview, setCoverPreview] = useState('');
+
+  const [corPrimaria, setCorPrimaria] = useState('#6d5dfc');
+  const [corSecundaria, setCorSecundaria] = useState('#111827');
+
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -76,9 +87,7 @@ const [corSecundaria, setCorSecundaria] = useState('#111827');
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
 
-    if (categoryError) {
-      console.error(categoryError);
-    }
+    if (categoryError) console.error(categoryError);
 
     const { data: productData, error: productError } =
       await supabase
@@ -88,67 +97,78 @@ const [corSecundaria, setCorSecundaria] = useState('#111827');
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
 
-    if (productError) {
-      console.error(productError);
-    }
+    if (productError) console.error(productError);
 
     const idsProdutos = (productData || []).map(
-  (produto) => produto.id
-);
+      (produto) => produto.id
+    );
 
-let groupData = [];
-let addonData = [];
+    let groupData = [];
+    let addonData = [];
 
-if (idsProdutos.length > 0) {
-  const { data: grupos, error: groupError } =
-    await supabase
-      .from('addon_groups')
-      .select('*')
-      .in('product_id', idsProdutos)
-      .order('sort_order', { ascending: true });
+    if (idsProdutos.length > 0) {
+      const { data: grupos, error: groupError } =
+        await supabase
+          .from('addon_groups')
+          .select('*')
+          .in('product_id', idsProdutos)
+          .order('sort_order', { ascending: true });
 
-  if (groupError) {
-    console.error(groupError);
-  } else {
-    groupData = grupos || [];
-  }
+      if (groupError) {
+        console.error(groupError);
+      } else {
+        groupData = grupos || [];
+      }
 
-  const idsGrupos = groupData.map(
-    (grupo) => grupo.id
-  );
+      const idsGrupos = groupData.map((grupo) => grupo.id);
 
-  if (idsGrupos.length > 0) {
-    const { data: itens, error: addonError } =
-      await supabase
-        .from('addons')
-        .select('*')
-        .in('group_id', idsGrupos)
-        .order('sort_order', { ascending: true });
+      if (idsGrupos.length > 0) {
+        const { data: itens, error: addonError } =
+          await supabase
+            .from('addons')
+            .select('*')
+            .in('group_id', idsGrupos)
+            .order('sort_order', { ascending: true });
 
-    if (addonError) {
-      console.error(addonError);
-    } else {
-      addonData = itens || [];
+        if (addonError) {
+          console.error(addonError);
+        } else {
+          addonData = itens || [];
+        }
+      }
     }
-  }
-}
 
-setGruposAdicionais(groupData);
-    setLogoUrl(restaurantData.logo_url || '');
-setCoverUrl(restaurantData.cover_url || '');
-setCorPrimaria(restaurantData.primary_color || '#6d5dfc');
-setCorSecundaria(restaurantData.secondary_color || '#111827');
-setAdicionais(addonData);
     setRestaurante(restaurantData);
     setCategorias(categoryData || []);
     setProdutos(productData || []);
+    setGruposAdicionais(groupData);
+    setAdicionais(addonData);
+
+    setLogoUrl(restaurantData.logo_url || '');
+    setCoverUrl(restaurantData.cover_url || '');
+    setLogoPreview(restaurantData.logo_url || '');
+    setCoverPreview(restaurantData.cover_url || '');
+
+    setCorPrimaria(
+      restaurantData.primary_color || '#6d5dfc'
+    );
+
+    setCorSecundaria(
+      restaurantData.secondary_color || '#111827'
+    );
+
     setCarregando(false);
   }
+
+  // =========================
+  // CATEGORIAS
+  // =========================
 
   async function criarCategoria(e) {
     e.preventDefault();
 
     const nome = novaCategoria.trim();
+
     if (!nome || salvando) return;
 
     setSalvando(true);
@@ -186,7 +206,9 @@ setAdicionais(addonData);
 
     const { data, error } = await supabase
       .from('categories')
-      .update({ name: nome.trim() })
+      .update({
+        name: nome.trim()
+      })
       .eq('id', categoria.id)
       .eq('restaurant_id', id)
       .select()
@@ -229,41 +251,44 @@ setAdicionais(addonData);
     );
   }
 
-  async function uploadFoto(file) {
-  if (!file) return null;
+  // =========================
+  // UPLOAD
+  // =========================
 
-  const limite = 5 * 1024 * 1024;
+  async function uploadImagem(file, pasta = 'produtos') {
+    if (!file) return null;
 
-  if (file.size > limite) {
-    throw new Error('A imagem deve ter no máximo 5 MB.');
-  }
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error(
+        'A imagem deve ter no máximo 5 MB.'
+      );
+    }
 
-  const tiposPermitidos = [
-    'image/jpeg',
-    'image/png',
-    'image/webp'
-  ];
+    const tiposPermitidos = [
+      'image/jpeg',
+      'image/png',
+      'image/webp'
+    ];
 
-  if (!tiposPermitidos.includes(file.type)) {
-    throw new Error(
-      'Formato inválido. Use JPG, PNG ou WebP.'
-    );
-  }
+    if (!tiposPermitidos.includes(file.type)) {
+      throw new Error(
+        'Formato inválido. Use JPG, PNG ou WebP.'
+      );
+    }
 
-  const extensao =
-    file.type === 'image/png'
-      ? 'png'
-      : file.type === 'image/webp'
-      ? 'webp'
-      : 'jpg';
+    const extensao =
+      file.type === 'image/png'
+        ? 'png'
+        : file.type === 'image/webp'
+        ? 'webp'
+        : 'jpg';
 
-  const nomeArquivo =
-    `${id}/${crypto.randomUUID()}.${extensao}`;
+    const nomeArquivo =
+      `${id}/${pasta}/${crypto.randomUUID()}.${extensao}`;
 
-  const arrayBuffer = await file.arrayBuffer();
+    const arrayBuffer = await file.arrayBuffer();
 
-  const { data: uploadData, error: uploadError } =
-    await supabase.storage
+    const { data, error } = await supabase.storage
       .from('product-images')
       .upload(nomeArquivo, arrayBuffer, {
         contentType: file.type,
@@ -271,30 +296,31 @@ setAdicionais(addonData);
         upsert: false
       });
 
-  if (uploadError) {
-    console.error('ERRO UPLOAD:', uploadError);
-    throw new Error(
-      `Falha ao enviar foto: ${uploadError.message}`
-    );
+    if (error) {
+      throw new Error(
+        `Falha ao enviar imagem: ${error.message}`
+      );
+    }
+
+    const { data: publicData } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(data.path);
+
+    return publicData.publicUrl;
   }
 
-  const { data: publicData } = supabase.storage
-    .from('product-images')
-    .getPublicUrl(uploadData.path);
-
-  if (!publicData?.publicUrl) {
-    throw new Error(
-      'A foto foi enviada, mas não foi possível gerar a URL.'
-    );
-  }
-
-  return publicData.publicUrl;
-}
+  // =========================
+  // PRODUTOS
+  // =========================
 
   async function criarProduto(e) {
     e.preventDefault();
 
-    if (!nomeProduto.trim() || !precoProduto || salvando) {
+    if (
+      !nomeProduto.trim() ||
+      !precoProduto ||
+      salvando
+    ) {
       return;
     }
 
@@ -305,7 +331,10 @@ setAdicionais(addonData);
       let imageUrl = null;
 
       if (fotoProduto) {
-        imageUrl = await uploadFoto(fotoProduto);
+        imageUrl = await uploadImagem(
+          fotoProduto,
+          'produtos'
+        );
       }
 
       const preco = Number(
@@ -344,7 +373,9 @@ setAdicionais(addonData);
       setFotoProduto(null);
       setDestaqueProduto(false);
 
-      const input = document.getElementById('fotoProduto');
+      const input =
+        document.getElementById('fotoProduto');
+
       if (input) input.value = '';
     } catch (error) {
       console.error(error);
@@ -357,7 +388,9 @@ setAdicionais(addonData);
   async function alternarProduto(produto) {
     const { data, error } = await supabase
       .from('products')
-      .update({ active: !produto.active })
+      .update({
+        active: !produto.active
+      })
       .eq('id', produto.id)
       .eq('restaurant_id', id)
       .select()
@@ -398,170 +431,267 @@ setAdicionais(addonData);
     setProdutos((atual) =>
       atual.filter((item) => item.id !== produto.id)
     );
-  }async function criarGrupoAdicional(e) {
-  e.preventDefault();
-
-  if (!produtoAdicional || !nomeGrupo.trim() || salvando) {
-    return;
   }
 
-  setSalvando(true);
-  setErro('');
+  // =========================
+  // ADICIONAIS
+  // =========================
 
-  const maximo = Math.max(1, Number(maxSelecoes) || 1);
+  async function criarGrupoAdicional(e) {
+    if (e?.preventDefault) e.preventDefault();
 
-  const { data, error } = await supabase
-    .from('addon_groups')
-    .insert({
-      product_id: produtoAdicional,
-      name: nomeGrupo.trim(),
-      required: grupoObrigatorio,
-      min_select: grupoObrigatorio ? 1 : 0,
-      max_select: maximo,
-      sort_order: gruposAdicionais.filter(
-        (grupo) => grupo.product_id === produtoAdicional
-      ).length
-    })
-    .select()
-    .single();
+    if (
+      !produtoAdicional ||
+      !nomeGrupo.trim() ||
+      salvando
+    ) {
+      return;
+    }
 
-  if (error) {
-    setErro(`Erro: ${error.message}`);
+    setSalvando(true);
+    setErro('');
+
+    const maximo = Math.max(
+      1,
+      Number(maxSelecoes) || 1
+    );
+
+    const { data, error } = await supabase
+      .from('addon_groups')
+      .insert({
+        product_id: produtoAdicional,
+        name: nomeGrupo.trim(),
+        required: grupoObrigatorio,
+        min_select: grupoObrigatorio ? 1 : 0,
+        max_select: maximo,
+        sort_order: gruposAdicionais.filter(
+          (grupo) =>
+            grupo.product_id === produtoAdicional
+        ).length
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setErro(`Erro: ${error.message}`);
+      setSalvando(false);
+      return;
+    }
+
+    setGruposAdicionais((atual) => [
+      ...atual,
+      data
+    ]);
+
+    setNomeGrupo('');
+    setGrupoObrigatorio(false);
+    setMaxSelecoes('1');
     setSalvando(false);
-    return;
   }
 
-  setGruposAdicionais((atual) => [...atual, data]);
-  setNomeGrupo('');
-  setGrupoObrigatorio(false);
-  setMaxSelecoes('1');
-  setSalvando(false);
-}
+  async function criarAdicional(grupoId) {
+    if (
+      !grupoId ||
+      !nomeAdicional.trim() ||
+      salvando
+    ) {
+      return;
+    }
 
-async function criarAdicional(grupoId) {
-  if (!grupoId || !nomeAdicional.trim() || salvando) {
-    return;
-  }
+    setSalvando(true);
+    setErro('');
 
-  setSalvando(true);
-  setErro('');
+    const preco = Number(
+      (precoAdicional || '0').replace(',', '.')
+    );
 
-  const preco = Number(
-    (precoAdicional || '0').replace(',', '.')
-  );
+    if (Number.isNaN(preco) || preco < 0) {
+      setErro('Digite um preço válido.');
+      setSalvando(false);
+      return;
+    }
 
-  if (Number.isNaN(preco) || preco < 0) {
-    setErro('Digite um preço válido.');
+    const { data, error } = await supabase
+      .from('addons')
+      .insert({
+        group_id: grupoId,
+        name: nomeAdicional.trim(),
+        price: preco,
+        active: true,
+        sort_order: adicionais.filter(
+          (item) => item.group_id === grupoId
+        ).length
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setErro(`Erro: ${error.message}`);
+      setSalvando(false);
+      return;
+    }
+
+    setAdicionais((atual) => [...atual, data]);
+
+    setGrupoSelecionado(grupoId);
+    setNomeAdicional('');
+    setPrecoAdicional('');
     setSalvando(false);
-    return;
   }
 
-  const { data, error } = await supabase
-    .from('addons')
-    .insert({
-      group_id: grupoId,
-      name: nomeAdicional.trim(),
-      price: preco,
-      active: true,
-      sort_order: adicionais.filter(
-        (item) => item.group_id === grupoId
-      ).length
-    })
-    .select()
-    .single();
+  async function excluirGrupoAdicional(grupo) {
+    if (
+      !window.confirm(`Excluir "${grupo.name}"?`)
+    ) {
+      return;
+    }
 
-  if (error) {
-    setErro(`Erro: ${error.message}`);
+    const { error } = await supabase
+      .from('addon_groups')
+      .delete()
+      .eq('id', grupo.id);
+
+    if (error) {
+      setErro(`Erro: ${error.message}`);
+      return;
+    }
+
+    setGruposAdicionais((atual) =>
+      atual.filter((item) => item.id !== grupo.id)
+    );
+
+    setAdicionais((atual) =>
+      atual.filter(
+        (item) => item.group_id !== grupo.id
+      )
+    );
+  }
+
+  async function excluirAdicional(adicional) {
+    if (
+      !window.confirm(
+        `Excluir "${adicional.name}"?`
+      )
+    ) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('addons')
+      .delete()
+      .eq('id', adicional.id);
+
+    if (error) {
+      setErro(`Erro: ${error.message}`);
+      return;
+    }
+
+    setAdicionais((atual) =>
+      atual.filter(
+        (item) => item.id !== adicional.id
+      )
+    );
+  }
+
+  // =========================
+  // APARÊNCIA
+  // =========================
+
+  function escolherLogo(file) {
+    if (!file) return;
+
+    setLogoArquivo(file);
+
+    const preview = URL.createObjectURL(file);
+    setLogoPreview(preview);
+  }
+
+  function escolherCapa(file) {
+    if (!file) return;
+
+    setCoverArquivo(file);
+
+    const preview = URL.createObjectURL(file);
+    setCoverPreview(preview);
+  }
+
+  async function salvarAparencia() {
+    if (salvando) return;
+
+    setSalvando(true);
+    setErro('');
+
+    try {
+      let novaLogoUrl = logoUrl;
+      let novaCoverUrl = coverUrl;
+
+      if (logoArquivo) {
+        novaLogoUrl = await uploadImagem(
+          logoArquivo,
+          'aparencia/logo'
+        );
+      }
+
+      if (coverArquivo) {
+        novaCoverUrl = await uploadImagem(
+          coverArquivo,
+          'aparencia/capa'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('restaurants')
+        .update({
+          logo_url: novaLogoUrl || null,
+          cover_url: novaCoverUrl || null,
+          primary_color: corPrimaria,
+          secondary_color: corSecundaria,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setRestaurante(data);
+
+      setLogoUrl(novaLogoUrl || '');
+      setCoverUrl(novaCoverUrl || '');
+
+      setLogoPreview(novaLogoUrl || '');
+      setCoverPreview(novaCoverUrl || '');
+
+      setLogoArquivo(null);
+      setCoverArquivo(null);
+
+      alert('Aparência salva com sucesso!');
+    } catch (error) {
+      console.error(error);
+      setErro(`Erro: ${error.message}`);
+    }
+
     setSalvando(false);
-    return;
   }
 
-  setAdicionais((atual) => [...atual, data]);
-  setGrupoSelecionado(grupoId);
-  setNomeAdicional('');
-  setPrecoAdicional('');
-  setSalvando(false);
-}
-
-async function excluirGrupoAdicional(grupo) {
-  if (!window.confirm(`Excluir "${grupo.name}"?`)) return;
-
-  const { error } = await supabase
-    .from('addon_groups')
-    .delete()
-    .eq('id', grupo.id);
-
-  if (error) {
-    setErro(`Erro: ${error.message}`);
-    return;
-  }
-
-  setGruposAdicionais((atual) =>
-    atual.filter((item) => item.id !== grupo.id)
-  );
-
-  setAdicionais((atual) =>
-    atual.filter((item) => item.group_id !== grupo.id)
-  );
-}
-
-async function excluirAdicional(adicional) {
-  if (!window.confirm(`Excluir "${adicional.name}"?`)) return;
-
-  const { error } = await supabase
-    .from('addons')
-    .delete()
-    .eq('id', adicional.id);
-
-  if (error) {
-    setErro(`Erro: ${error.message}`);
-    return;
-  }
-
-  setAdicionais((atual) =>
-    atual.filter((item) => item.id !== adicional.id)
-  );
-}
-async function salvarAparencia() {
-  if (salvando) return;
-
-  setSalvando(true);
-  setErro('');
-
-  const { data, error } = await supabase
-    .from('restaurants')
-    .update({
-      logo_url: logoUrl || null,
-      cover_url: coverUrl || null,
-      primary_color: corPrimaria,
-      secondary_color: corSecundaria,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    setErro(`Erro: ${error.message}`);
-    setSalvando(false);
-    return;
-  }
-
-  setRestaurante(data);
-  setSalvando(false);
-  alert('Aparência salva com sucesso!');
-}
   function dinheiro(valor) {
-    return Number(valor || 0).toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    });
+    return Number(valor || 0).toLocaleString(
+      'pt-BR',
+      {
+        style: 'currency',
+        currency: 'BRL'
+      }
+    );
   }
 
   function voltarEditor() {
     setTela('inicio');
     setErro('');
   }
+
+  // =========================
+  // CARREGANDO
+  // =========================
 
   if (carregando) {
     return (
@@ -578,133 +708,19 @@ async function salvarAparencia() {
       </main>
     );
   }
-if (tela === 'aparencia') {
-  return (
-    <main style={styles.page}>
-      <section style={styles.container}>
-        <button
-          style={styles.back}
-          onClick={voltarEditor}
-        >
-          ← Voltar ao editor
-        </button>
 
-        <p style={styles.eyebrow}>
-          {restaurante.name.toUpperCase()}
-        </p>
+  // =========================
+  // APARÊNCIA
+  // =========================
 
-        <h1 style={styles.title}>Aparência</h1>
-
-        <p style={styles.subtitle}>
-          Personalize a identidade visual do seu cardápio.
-        </p>
-
-        <div style={styles.productForm}>
-          <label style={styles.label}>
-            URL da logo
-            <input
-              style={styles.input}
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://..."
-            />
-          </label>
-
-          <label style={styles.label}>
-            URL da imagem de capa
-            <input
-              style={styles.input}
-              value={coverUrl}
-              onChange={(e) => setCoverUrl(e.target.value)}
-              placeholder="https://..."
-            />
-          </label>
-
-          <label style={styles.label}>
-            Cor principal
-            <input
-              type="color"
-              value={corPrimaria}
-              onChange={(e) => setCorPrimaria(e.target.value)}
-              style={{
-                width: '100%',
-                height: '55px',
-                border: '1px solid #d1d5db',
-                borderRadius: '11px'
-              }}
-            />
-          </label>
-
-          <label style={styles.label}>
-            Cor secundária
-            <input
-              type="color"
-              value={corSecundaria}
-              onChange={(e) => setCorSecundaria(e.target.value)}
-              style={{
-                width: '100%',
-                height: '55px',
-                border: '1px solid #d1d5db',
-                borderRadius: '11px'
-              }}
-            />
-          </label>
-
-          <div
-            style={{
-              padding: '25px',
-              borderRadius: '16px',
-              background: corSecundaria,
-              color: '#fff'
-            }}
-          >
-            <strong>Prévia do cardápio</strong>
-
-            <p>
-              Veja como as cores da sua marca ficarão.
-            </p>
-
-            <button
-              type="button"
-              style={{
-                border: 0,
-                padding: '12px 18px',
-                borderRadius: '10px',
-                background: corPrimaria,
-                color: '#fff',
-                fontWeight: '800'
-              }}
-            >
-              Adicionar ao pedido
-            </button>
-          </div>
-
-          {erro && (
-            <div style={styles.error}>
-              {erro}
-            </div>
-          )}
-
-          <button
-            style={styles.primary}
-            type="button"
-            onClick={salvarAparencia}
-            disabled={salvando}
-          >
-            {salvando
-              ? 'Salvando...'
-              : 'Salvar aparência'}
-          </button>
-        </div>
-      </section>
-    </main>
-  );
-}
-  if (tela === 'categorias') {
+  if (tela === 'aparencia') {
     return (
       <main style={styles.page}>
         <section style={styles.container}>
-          <button style={styles.back} onClick={voltarEditor}>
+          <button
+            style={styles.back}
+            onClick={voltarEditor}
+          >
             ← Voltar ao editor
           </button>
 
@@ -712,7 +728,184 @@ if (tela === 'aparencia') {
             {restaurante.name.toUpperCase()}
           </p>
 
-          <h1 style={styles.title}>Categorias</h1>
+          <h1 style={styles.title}>Aparência</h1>
+
+          <p style={styles.subtitle}>
+            Personalize a identidade visual do seu
+            cardápio.
+          </p>
+
+          <div style={styles.productForm}>
+            <label style={styles.label}>
+              Logo do restaurante
+
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={styles.input}
+                onChange={(e) =>
+                  escolherLogo(
+                    e.target.files?.[0]
+                  )
+                }
+              />
+            </label>
+
+            {logoPreview && (
+              <div style={styles.logoPreviewBox}>
+                <img
+                  src={logoPreview}
+                  alt="Logo"
+                  style={styles.logoPreview}
+                />
+              </div>
+            )}
+
+            <label style={styles.label}>
+              Imagem de capa
+
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={styles.input}
+                onChange={(e) =>
+                  escolherCapa(
+                    e.target.files?.[0]
+                  )
+                }
+              />
+            </label>
+
+            {coverPreview && (
+              <img
+                src={coverPreview}
+                alt="Capa"
+                style={styles.coverPreview}
+              />
+            )}
+
+            <small style={styles.hint}>
+              JPG, PNG ou WebP. Máximo 5 MB por
+              imagem.
+            </small>
+
+            <label style={styles.label}>
+              Cor principal
+
+              <input
+                type="color"
+                value={corPrimaria}
+                onChange={(e) =>
+                  setCorPrimaria(e.target.value)
+                }
+                style={styles.colorInput}
+              />
+            </label>
+
+            <label style={styles.label}>
+              Cor secundária
+
+              <input
+                type="color"
+                value={corSecundaria}
+                onChange={(e) =>
+                  setCorSecundaria(e.target.value)
+                }
+                style={styles.colorInput}
+              />
+            </label>
+
+            <div
+              style={{
+                ...styles.preview,
+                background: corSecundaria
+              }}
+            >
+              {coverPreview && (
+                <img
+                  src={coverPreview}
+                  alt=""
+                  style={styles.previewCover}
+                />
+              )}
+
+              <div style={styles.previewContent}>
+                {logoPreview && (
+                  <img
+                    src={logoPreview}
+                    alt=""
+                    style={styles.previewLogo}
+                  />
+                )}
+
+                <strong style={{ fontSize: 20 }}>
+                  {restaurante.name}
+                </strong>
+
+                <p>
+                  Veja como a identidade do seu
+                  cardápio ficará.
+                </p>
+
+                <button
+                  type="button"
+                  style={{
+                    ...styles.previewButton,
+                    background: corPrimaria
+                  }}
+                >
+                  Adicionar ao pedido
+                </button>
+              </div>
+            </div>
+
+            {erro && (
+              <div style={styles.error}>
+                {erro}
+              </div>
+            )}
+
+            <button
+              style={{
+                ...styles.primary,
+                background: corPrimaria
+              }}
+              type="button"
+              onClick={salvarAparencia}
+              disabled={salvando}
+            >
+              {salvando
+                ? 'Salvando...'
+                : 'Salvar aparência'}
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  // =========================
+  // CATEGORIAS
+  // =========================
+
+  if (tela === 'categorias') {
+    return (
+      <main style={styles.page}>
+        <section style={styles.container}>
+          <button
+            style={styles.back}
+            onClick={voltarEditor}
+          >
+            ← Voltar ao editor
+          </button>
+
+          <p style={styles.eyebrow}>
+            {restaurante.name.toUpperCase()}
+          </p>
+
+          <h1 style={styles.title}>
+            Categorias
+          </h1>
 
           <p style={styles.subtitle}>
             Organize os produtos do seu cardápio.
@@ -731,12 +924,20 @@ if (tela === 'aparencia') {
               placeholder="Ex.: Pizzas"
             />
 
-            <button style={styles.primary} type="submit">
+            <button
+              style={styles.primary}
+              type="submit"
+              disabled={salvando}
+            >
               + Adicionar
             </button>
           </form>
 
-          {erro && <div style={styles.error}>{erro}</div>}
+          {erro && (
+            <div style={styles.error}>
+              {erro}
+            </div>
+          )}
 
           <div style={styles.list}>
             {categorias.map((categoria) => (
@@ -744,13 +945,14 @@ if (tela === 'aparencia') {
                 key={categoria.id}
                 style={styles.listItem}
               >
-                <div>
-                  <strong>{categoria.name}</strong>
-                </div>
+                <strong>
+                  {categoria.name}
+                </strong>
 
                 <div style={styles.actions}>
                   <button
                     style={styles.secondary}
+                    type="button"
                     onClick={() =>
                       renomearCategoria(categoria)
                     }
@@ -760,6 +962,7 @@ if (tela === 'aparencia') {
 
                   <button
                     style={styles.danger}
+                    type="button"
                     onClick={() =>
                       excluirCategoria(categoria)
                     }
@@ -775,11 +978,18 @@ if (tela === 'aparencia') {
     );
   }
 
+  // =========================
+  // PRODUTOS
+  // =========================
+
   if (tela === 'produtos') {
     return (
       <main style={styles.page}>
         <section style={styles.container}>
-          <button style={styles.back} onClick={voltarEditor}>
+          <button
+            style={styles.back}
+            onClick={voltarEditor}
+          >
             ← Voltar ao editor
           </button>
 
@@ -787,7 +997,9 @@ if (tela === 'aparencia') {
             {restaurante.name.toUpperCase()}
           </p>
 
-          <h1 style={styles.title}>Produtos</h1>
+          <h1 style={styles.title}>
+            Produtos
+          </h1>
 
           <p style={styles.subtitle}>
             Cadastre os itens do cardápio.
@@ -803,6 +1015,7 @@ if (tela === 'aparencia') {
 
             <label style={styles.label}>
               Nome *
+
               <input
                 style={styles.input}
                 value={nomeProduto}
@@ -816,11 +1029,14 @@ if (tela === 'aparencia') {
 
             <label style={styles.label}>
               Categoria
+
               <select
                 style={styles.input}
                 value={categoriaProduto}
                 onChange={(e) =>
-                  setCategoriaProduto(e.target.value)
+                  setCategoriaProduto(
+                    e.target.value
+                  )
                 }
               >
                 <option value="">
@@ -840,11 +1056,14 @@ if (tela === 'aparencia') {
 
             <label style={styles.label}>
               Descrição
+
               <textarea
                 style={styles.textarea}
                 value={descricaoProduto}
                 onChange={(e) =>
-                  setDescricaoProduto(e.target.value)
+                  setDescricaoProduto(
+                    e.target.value
+                  )
                 }
                 placeholder="Ingredientes e detalhes..."
               />
@@ -852,6 +1071,7 @@ if (tela === 'aparencia') {
 
             <label style={styles.label}>
               Preço *
+
               <input
                 style={styles.input}
                 value={precoProduto}
@@ -865,7 +1085,8 @@ if (tela === 'aparencia') {
             </label>
 
             <label style={styles.label}>
-              Foto
+              Foto do produto
+
               <input
                 id="fotoProduto"
                 style={styles.input}
@@ -877,19 +1098,23 @@ if (tela === 'aparencia') {
                   )
                 }
               />
-              <small style={styles.hint}>
-                JPG, PNG ou WebP. Máximo 5 MB.
-              </small>
             </label>
+
+            <small style={styles.hint}>
+              JPG, PNG ou WebP. Máximo 5 MB.
+            </small>
 
             <label style={styles.checkLabel}>
               <input
                 type="checkbox"
                 checked={destaqueProduto}
                 onChange={(e) =>
-                  setDestaqueProduto(e.target.checked)
+                  setDestaqueProduto(
+                    e.target.checked
+                  )
                 }
               />
+
               Marcar como destaque
             </label>
 
@@ -904,10 +1129,15 @@ if (tela === 'aparencia') {
             </button>
           </form>
 
-          {erro && <div style={styles.error}>{erro}</div>}
+          {erro && (
+            <div style={styles.error}>
+              {erro}
+            </div>
+          )}
 
           <h2 style={styles.sectionTitle}>
-            Produtos cadastrados ({produtos.length})
+            Produtos cadastrados (
+            {produtos.length})
           </h2>
 
           <div style={styles.productGrid}>
@@ -923,24 +1153,32 @@ if (tela === 'aparencia') {
                     style={styles.productImage}
                   />
                 ) : (
-                  <div style={styles.noImage}>🍕</div>
+                  <div style={styles.noImage}>
+                    🍕
+                  </div>
                 )}
 
                 <div style={styles.productBody}>
                   <div style={styles.productTop}>
-                    <strong style={styles.productName}>
+                    <strong
+                      style={styles.productName}
+                    >
                       {produto.name}
                     </strong>
 
                     {!produto.active && (
-                      <span style={styles.inactive}>
+                      <span
+                        style={styles.inactive}
+                      >
                         Inativo
                       </span>
                     )}
                   </div>
 
                   {produto.description && (
-                    <p style={styles.description}>
+                    <p
+                      style={styles.description}
+                    >
                       {produto.description}
                     </p>
                   )}
@@ -952,6 +1190,7 @@ if (tela === 'aparencia') {
                   <div style={styles.actions}>
                     <button
                       style={styles.secondary}
+                      type="button"
                       onClick={() =>
                         alternarProduto(produto)
                       }
@@ -963,6 +1202,7 @@ if (tela === 'aparencia') {
 
                     <button
                       style={styles.danger}
+                      type="button"
                       onClick={() =>
                         excluirProduto(produto)
                       }
@@ -978,6 +1218,11 @@ if (tela === 'aparencia') {
       </main>
     );
   }
+
+  // =========================
+  // ADICIONAIS
+  // =========================
+
   if (tela === 'adicionais') {
     return (
       <main style={styles.page}>
@@ -993,10 +1238,12 @@ if (tela === 'aparencia') {
             {restaurante.name.toUpperCase()}
           </p>
 
-          <h1 style={styles.title}>Adicionais</h1>
+          <h1 style={styles.title}>
+            Adicionais
+          </h1>
 
           <p style={styles.subtitle}>
-            Crie bordas, sabores, complementos e outras opções para os produtos.
+            Crie bordas, sabores e complementos.
           </p>
 
           <div style={styles.productForm}>
@@ -1006,11 +1253,14 @@ if (tela === 'aparencia') {
 
             <label style={styles.label}>
               Produto
+
               <select
                 style={styles.input}
                 value={produtoAdicional}
                 onChange={(e) =>
-                  setProdutoAdicional(e.target.value)
+                  setProdutoAdicional(
+                    e.target.value
+                  )
                 }
               >
                 <option value="">
@@ -1030,6 +1280,7 @@ if (tela === 'aparencia') {
 
             <label style={styles.label}>
               Nome do grupo
+
               <input
                 style={styles.input}
                 value={nomeGrupo}
@@ -1045,14 +1296,18 @@ if (tela === 'aparencia') {
                 type="checkbox"
                 checked={grupoObrigatorio}
                 onChange={(e) =>
-                  setGrupoObrigatorio(e.target.checked)
+                  setGrupoObrigatorio(
+                    e.target.checked
+                  )
                 }
               />
+
               Escolha obrigatória
             </label>
 
             <label style={styles.label}>
               Máximo de escolhas
+
               <input
                 style={styles.input}
                 type="number"
@@ -1083,18 +1338,22 @@ if (tela === 'aparencia') {
           )}
 
           <h2 style={styles.sectionTitle}>
-            Grupos cadastrados ({gruposAdicionais.length})
+            Grupos cadastrados (
+            {gruposAdicionais.length})
           </h2>
 
           <div style={styles.list}>
             {gruposAdicionais.map((grupo) => {
               const produto = produtos.find(
-                (item) => item.id === grupo.product_id
+                (item) =>
+                  item.id === grupo.product_id
               );
 
-              const itensGrupo = adicionais.filter(
-                (item) => item.group_id === grupo.id
-              );
+              const itensGrupo =
+                adicionais.filter(
+                  (item) =>
+                    item.group_id === grupo.id
+                );
 
               return (
                 <div
@@ -1102,12 +1361,17 @@ if (tela === 'aparencia') {
                   style={styles.productForm}
                 >
                   <div>
-                    <strong style={styles.productName}>
+                    <strong
+                      style={styles.productName}
+                    >
                       {grupo.name}
                     </strong>
 
-                    <p style={styles.description}>
-                      Produto: {produto?.name || 'Produto'}
+                    <p
+                      style={styles.description}
+                    >
+                      Produto:{' '}
+                      {produto?.name || 'Produto'}
                     </p>
 
                     <small style={styles.hint}>
@@ -1119,37 +1383,51 @@ if (tela === 'aparencia') {
                     </small>
                   </div>
 
-                  <div style={styles.formBox}>
+                  <div style={styles.addonForm}>
                     <input
                       style={styles.input}
                       value={
-                        grupoSelecionado === grupo.id
+                        grupoSelecionado ===
+                        grupo.id
                           ? nomeAdicional
                           : ''
                       }
                       onFocus={() =>
-                        setGrupoSelecionado(grupo.id)
+                        setGrupoSelecionado(
+                          grupo.id
+                        )
                       }
                       onChange={(e) => {
-                        setGrupoSelecionado(grupo.id);
-                        setNomeAdicional(e.target.value);
+                        setGrupoSelecionado(
+                          grupo.id
+                        );
+                        setNomeAdicional(
+                          e.target.value
+                        );
                       }}
-                      placeholder="Ex.: Borda de Catupiry"
+                      placeholder="Ex.: Catupiry"
                     />
 
                     <input
                       style={styles.input}
                       value={
-                        grupoSelecionado === grupo.id
+                        grupoSelecionado ===
+                        grupo.id
                           ? precoAdicional
                           : ''
                       }
                       onFocus={() =>
-                        setGrupoSelecionado(grupo.id)
+                        setGrupoSelecionado(
+                          grupo.id
+                        )
                       }
                       onChange={(e) => {
-                        setGrupoSelecionado(grupo.id);
-                        setPrecoAdicional(e.target.value);
+                        setGrupoSelecionado(
+                          grupo.id
+                        );
+                        setPrecoAdicional(
+                          e.target.value
+                        );
                       }}
                       placeholder="Preço"
                       inputMode="decimal"
@@ -1166,32 +1444,40 @@ if (tela === 'aparencia') {
                     </button>
                   </div>
 
-                  {itensGrupo.map((adicional) => (
-                    <div
-                      key={adicional.id}
-                      style={styles.listItem}
-                    >
-                      <div>
-                        <strong>
-                          {adicional.name}
-                        </strong>
-
-                        <div style={styles.price}>
-                          {dinheiro(adicional.price)}
-                        </div>
-                      </div>
-
-                      <button
-                        style={styles.danger}
-                        type="button"
-                        onClick={() =>
-                          excluirAdicional(adicional)
-                        }
+                  {itensGrupo.map(
+                    (adicional) => (
+                      <div
+                        key={adicional.id}
+                        style={styles.listItem}
                       >
-                        Excluir
-                      </button>
-                    </div>
-                  ))}
+                        <div>
+                          <strong>
+                            {adicional.name}
+                          </strong>
+
+                          <div
+                            style={styles.price}
+                          >
+                            {dinheiro(
+                              adicional.price
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          style={styles.danger}
+                          type="button"
+                          onClick={() =>
+                            excluirAdicional(
+                              adicional
+                            )
+                          }
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    )
+                  )}
 
                   <button
                     style={styles.danger}
@@ -1209,7 +1495,12 @@ if (tela === 'aparencia') {
         </section>
       </main>
     );
-            }
+  }
+
+  // =========================
+  // INÍCIO DO EDITOR
+  // =========================
+
   return (
     <main style={styles.page}>
       <section style={styles.container}>
@@ -1233,25 +1524,33 @@ if (tela === 'aparencia') {
             </h1>
 
             <p style={styles.subtitle}>
-              Monte e personalize o cardápio
-              deste restaurante.
+              Monte e personalize o cardápio deste
+              restaurante.
             </p>
           </div>
 
           <span style={styles.badge}>
-            Demonstração
+            {restaurante.status === 'active'
+              ? 'Ativo'
+              : restaurante.status === 'paused'
+              ? 'Pausado'
+              : 'Demonstração'}
           </span>
         </header>
 
         <section style={styles.grid}>
           <button
             style={styles.card}
-            onClick={() => setTela('categorias')}
+            onClick={() =>
+              setTela('categorias')
+            }
           >
             <span style={styles.icon}>📂</span>
+
             <strong style={styles.cardTitle}>
               Categorias
             </strong>
+
             <small style={styles.cardText}>
               {categorias.length} cadastradas
             </small>
@@ -1262,30 +1561,50 @@ if (tela === 'aparencia') {
             onClick={() => setTela('produtos')}
           >
             <span style={styles.icon}>🍕</span>
+
             <strong style={styles.cardTitle}>
               Produtos
             </strong>
+
             <small style={styles.cardText}>
               {produtos.length} cadastrados
             </small>
           </button>
 
           <button
-  style={styles.card}
-  onClick={() => setTela('adicionais')}
->
-  <span style={styles.icon}>➕</span>
+            style={styles.card}
+            onClick={() =>
+              setTela('adicionais')
+            }
+          >
+            <span style={styles.icon}>➕</span>
 
-  <strong style={styles.cardTitle}>
-    Adicionais
-  </strong>
+            <strong style={styles.cardTitle}>
+              Adicionais
+            </strong>
 
-  <small style={styles.cardText}>
-    {gruposAdicionais.length} grupos cadastrados
-  </small>
-</button>
+            <small style={styles.cardText}>
+              {gruposAdicionais.length} grupos
+              cadastrados
+            </small>
+          </button>
 
-        
+          <button
+            style={styles.card}
+            onClick={() =>
+              setTela('aparencia')
+            }
+          >
+            <span style={styles.icon}>🎨</span>
+
+            <strong style={styles.cardTitle}>
+              Aparência
+            </strong>
+
+            <small style={styles.cardText}>
+              Logo, capa e cores.
+            </small>
+          </button>
 
           <EditorCard
             icon="📱"
@@ -1293,20 +1612,11 @@ if (tela === 'aparencia') {
             text="WhatsApp, endereço e entrega."
           />
 
-          <button
-  style={styles.card}
-  onClick={() => setTela('aparencia')}
->
-  <span style={styles.icon}>🎨</span>
-
-  <strong style={styles.cardTitle}>
-    Aparência
-  </strong>
-
-  <small style={styles.cardText}>
-    Logo, capa e cores do cardápio.
-  </small>
-</button>
+          <EditorCard
+            icon="👁️"
+            title="Visualizar cardápio"
+            text="Veja o cardápio como o cliente."
+          />
         </section>
       </section>
     </main>
@@ -1316,9 +1626,17 @@ if (tela === 'aparencia') {
 function EditorCard({ icon, title, text }) {
   return (
     <button style={styles.card}>
-      <span style={styles.icon}>{icon}</span>
-      <strong style={styles.cardTitle}>{title}</strong>
-      <small style={styles.cardText}>{text}</small>
+      <span style={styles.icon}>
+        {icon}
+      </span>
+
+      <strong style={styles.cardTitle}>
+        {title}
+      </strong>
+
+      <small style={styles.cardText}>
+        {text}
+      </small>
     </button>
   );
 }
@@ -1426,8 +1744,17 @@ const styles = {
     padding: '18px',
     borderRadius: '18px',
     display: 'flex',
+    flexWrap: 'wrap',
     gap: '10px',
     margin: '25px 0'
+  },
+
+  addonForm: {
+    background: '#f9fafb',
+    padding: '15px',
+    borderRadius: '15px',
+    display: 'grid',
+    gap: '10px'
   },
 
   productForm: {
@@ -1605,5 +1932,71 @@ const styles = {
     borderRadius: '8px',
     color: '#6b7280',
     fontSize: '11px'
+  },
+
+  colorInput: {
+    width: '100%',
+    height: '55px',
+    border: '1px solid #d1d5db',
+    borderRadius: '11px',
+    cursor: 'pointer'
+  },
+
+  logoPreviewBox: {
+    background: '#f3f4f6',
+    borderRadius: '16px',
+    padding: '20px',
+    display: 'flex',
+    justifyContent: 'center'
+  },
+
+  logoPreview: {
+    width: '120px',
+    height: '120px',
+    objectFit: 'contain',
+    borderRadius: '16px'
+  },
+
+  coverPreview: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'cover',
+    borderRadius: '16px'
+  },
+
+  preview: {
+    overflow: 'hidden',
+    borderRadius: '18px',
+    color: '#fff'
+  },
+
+  previewCover: {
+    width: '100%',
+    height: '150px',
+    objectFit: 'cover',
+    display: 'block'
+  },
+
+  previewContent: {
+    padding: '22px'
+  },
+
+  previewLogo: {
+    width: '70px',
+    height: '70px',
+    objectFit: 'contain',
+    background: '#fff',
+    borderRadius: '14px',
+    padding: '5px',
+    display: 'block',
+    marginBottom: '15px'
+  },
+
+  previewButton: {
+    border: 0,
+    padding: '12px 18px',
+    borderRadius: '10px',
+    color: '#fff',
+    fontWeight: '800'
   }
 };
