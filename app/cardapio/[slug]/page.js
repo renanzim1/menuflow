@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from 'react';
+
 import { useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -90,7 +96,10 @@ export default function CardapioPublico() {
         }
 
         const listaProdutos = productData || [];
-        const idsProdutos = listaProdutos.map((produto) => produto.id);
+
+        const idsProdutos = listaProdutos.map(
+          (produto) => produto.id
+        );
 
         let groupData = [];
         let addonData = [];
@@ -106,12 +115,17 @@ export default function CardapioPublico() {
             .order('sort_order', { ascending: true });
 
           if (groupError) {
-            console.error('Erro ao carregar grupos:', groupError);
+            console.error(
+              'Erro ao carregar grupos:',
+              groupError
+            );
           } else {
             groupData = grupos || [];
           }
 
-          const idsGrupos = groupData.map((grupo) => grupo.id);
+          const idsGrupos = groupData.map(
+            (grupo) => grupo.id
+          );
 
           if (idsGrupos.length > 0) {
             const {
@@ -125,7 +139,10 @@ export default function CardapioPublico() {
               .order('sort_order', { ascending: true });
 
             if (addonError) {
-              console.error('Erro ao carregar adicionais:', addonError);
+              console.error(
+                'Erro ao carregar adicionais:',
+                addonError
+              );
             } else {
               addonData = itens || [];
             }
@@ -216,10 +233,20 @@ export default function CardapioPublico() {
       });
   }
 
-  function abrirProduto(produto) {
-    const grupos = gruposAdicionais.filter(
-      (grupo) => grupo.product_id === produto.id
+  function gruposDoProduto(produtoId) {
+    return gruposAdicionais.filter(
+      (grupo) => grupo.product_id === produtoId
     );
+  }
+
+  function adicionaisDoGrupo(grupoId) {
+    return adicionais.filter(
+      (item) => item.group_id === grupoId
+    );
+  }
+
+  function abrirProduto(produto) {
+    const grupos = gruposDoProduto(produto.id);
 
     if (!grupos.length) {
       alert(
@@ -237,20 +264,9 @@ export default function CardapioPublico() {
     setSelecionados({});
   }
 
-  function gruposDoProduto(produtoId) {
-    return gruposAdicionais.filter(
-      (grupo) => grupo.product_id === produtoId
-    );
-  }
-
-  function adicionaisDoGrupo(grupoId) {
-    return adicionais.filter(
-      (item) => item.group_id === grupoId
-    );
-  }
-
   function adicionalSelecionado(grupoId, adicionalId) {
     const lista = selecionados[grupoId] || [];
+
     return lista.includes(adicionalId);
   }
 
@@ -266,7 +282,7 @@ export default function CardapioPublico() {
         return {
           ...atual,
           [grupo.id]: listaAtual.filter(
-            (id) => id !== adicional.id
+            (itemId) => itemId !== adicional.id
           )
         };
       }
@@ -300,29 +316,29 @@ export default function CardapioPublico() {
   function confirmarProduto() {
     if (!produtoAberto) return;
 
-    const grupos =
-      gruposDoProduto(produtoAberto.id);
-
-    const grupoPendente = grupos.find(
-      (grupo) => {
-        if (!grupo.required) return false;
-
-        const quantidade =
-          (selecionados[grupo.id] || []).length;
-
-        const minimo = Math.max(
-          1,
-          Number(grupo.min_select) || 1
-        );
-
-        return quantidade < minimo;
-      }
+    const grupos = gruposDoProduto(
+      produtoAberto.id
     );
 
-    if (grupoPendente) {
-      alert(
-        `Escolha uma opção em "${grupoPendente.name}".`
+    const pendente = grupos.find((grupo) => {
+      if (!grupo.required) return false;
+
+      const quantidade =
+        (selecionados[grupo.id] || []).length;
+
+      const minimo = Math.max(
+        1,
+        Number(grupo.min_select) || 1
       );
+
+      return quantidade < minimo;
+    });
+
+    if (pendente) {
+      alert(
+        `Escolha uma opção em "${pendente.name}".`
+      );
+
       return;
     }
 
@@ -364,9 +380,7 @@ export default function CardapioPublico() {
   if (carregando) {
     return (
       <main className="loading">
-        <div className="loaderPlate">
-          🍽️
-        </div>
+        <div className="loader">🍽️</div>
 
         <strong>
           Preparando o cardápio...
@@ -375,25 +389,25 @@ export default function CardapioPublico() {
         <style jsx>{`
           .loading {
             min-height: 100vh;
-            background: #090a0d;
+            background: #05070d;
             color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 18px;
+            gap: 16px;
             font-family: Arial, sans-serif;
           }
 
-          .loaderPlate {
-            font-size: 50px;
+          .loader {
+            font-size: 48px;
             animation: pulse 1.5s infinite;
           }
 
           @keyframes pulse {
             50% {
               transform: scale(1.12);
-              opacity: 0.65;
+              opacity: 0.6;
             }
           }
         `}</style>
@@ -417,11 +431,7 @@ export default function CardapioPublico() {
             Este restaurante não está disponível.
           </p>
 
-          {erro && (
-            <small>
-              {erro}
-            </small>
-          )}
+          {erro && <small>{erro}</small>}
         </div>
 
         <style jsx>{`
@@ -429,19 +439,19 @@ export default function CardapioPublico() {
             min-height: 100vh;
             display: grid;
             place-items: center;
-            text-align: center;
-            background: #090a0d;
-            color: white;
             padding: 30px;
+            text-align: center;
+            background: #05070d;
+            color: white;
             font-family: Arial, sans-serif;
           }
 
           .notFoundIcon {
-            font-size: 55px;
+            font-size: 52px;
           }
 
           small {
-            color: #ff7676;
+            color: #ff7777;
           }
         `}</style>
       </main>
@@ -449,12 +459,10 @@ export default function CardapioPublico() {
   }
 
   const primaria =
-    restaurante.primary_color ||
-    '#6d5dfc';
+    restaurante.primary_color || '#2455ff';
 
   const secundaria =
-    restaurante.secondary_color ||
-    '#111827';
+    restaurante.secondary_color || '#111827';
 
   const logoZoom = Number(
     restaurante.logo_zoom ?? 1
@@ -476,59 +484,24 @@ export default function CardapioPublico() {
         '--secondary': secundaria
       }}
     >
-      <div className="ambientLight lightOne" />
-      <div className="ambientLight lightTwo" />
+      <div className="backgroundGlow glow1" />
+      <div className="backgroundGlow glow2" />
 
-      {/* FUMAÇA NOVA */}
-      <div className="smokeLayer">
-        <div className="smokeStream smokeLeft">
-          <span className="smokePuff puff1" />
-          <span className="smokePuff puff2" />
-          <span className="smokePuff puff3" />
-          <span className="smokePuff puff4" />
-        </div>
-
-        <div className="smokeStream smokeCenter">
-          <span className="smokePuff puff1" />
-          <span className="smokePuff puff2" />
-          <span className="smokePuff puff3" />
-        </div>
-
-        <div className="smokeStream smokeRight">
-          <span className="smokePuff puff1" />
-          <span className="smokePuff puff2" />
-          <span className="smokePuff puff3" />
-          <span className="smokePuff puff4" />
-        </div>
-      </div>
+      <div className="smoke smoke1" />
+      <div className="smoke smoke2" />
 
       <div className="menu">
 
-        {restaurante.cover_url && (
-          <div className="cover">
-            <img
-              src={restaurante.cover_url}
-              alt={`Capa ${restaurante.name}`}
-            />
+        {/* TOPO */}
 
-            <div className="coverShade" />
-          </div>
-        )}
+        <header className="hero">
 
-        <header
-          className={`header ${
-            restaurante.cover_url
-              ? 'withCover'
-              : ''
-          }`}
-        >
-          <div className="brand">
+          <div className="heroDecoration" />
+
+          <div className="heroBrand">
 
             {restaurante.logo_url ? (
               <div className="logoBox">
-
-                <div className="logoGlow" />
-
                 <img
                   src={restaurante.logo_url}
                   alt={`Logo ${restaurante.name}`}
@@ -536,11 +509,9 @@ export default function CardapioPublico() {
                   style={{
                     left: `${logoPositionX}%`,
                     top: `${logoPositionY}%`,
-                    transform:
-                      `translate(-50%, -50%) scale(${logoZoom})`
+                    transform: `translate(-50%, -50%) scale(${logoZoom})`
                   }}
                 />
-
               </div>
             ) : (
               <div className="logoFallback">
@@ -548,93 +519,29 @@ export default function CardapioPublico() {
               </div>
             )}
 
-            <div className="brandText">
+            <div className="heroTitle">
 
-              <span className="premium">
-                MENU • EXPERIÊNCIA
-              </span>
+              <div className="brandLine">
+                <span />
+                <small>RESTAURANTE</small>
+                <span />
+              </div>
 
               <h1>
                 {restaurante.name}
               </h1>
 
-              <div className="online">
-                <span className="onlineDot" />
-                Cardápio online
-              </div>
+              <p>
+                SABOR EM CADA PEDIDO
+              </p>
 
             </div>
 
           </div>
 
-          <div className="goldLine" />
         </header>
 
-        <section className="restaurantDetails">
-
-          {restaurante.address && (
-            <div className="detail">
-              <span className="detailIcon">
-                📍
-              </span>
-
-              <div>
-                <small>
-                  ENDEREÇO
-                </small>
-
-                <strong>
-                  {restaurante.address}
-                </strong>
-              </div>
-            </div>
-          )}
-
-          <div className="detail">
-            <span className="detailIcon">
-              🛵
-            </span>
-
-            <div>
-              <small>
-                ENTREGA
-              </small>
-
-              <strong>
-                {Number(
-                  restaurante.delivery_fee || 0
-                ) === 0
-                  ? 'Grátis'
-                  : dinheiro(
-                      restaurante.delivery_fee
-                    )}
-              </strong>
-            </div>
-          </div>
-
-          {Number(
-            restaurante.minimum_order || 0
-          ) > 0 && (
-            <div className="detail">
-              <span className="detailIcon">
-                🛒
-              </span>
-
-              <div>
-                <small>
-                  PEDIDO MÍNIMO
-                </small>
-
-                <strong>
-                  {dinheiro(
-                    restaurante.minimum_order
-                  )}
-                </strong>
-              </div>
-            </div>
-          )}
-
-        </section>
+        {/* CATEGORIAS */}
 
         {categorias.length > 0 && (
           <nav className="categoryNav">
@@ -658,83 +565,176 @@ export default function CardapioPublico() {
           </nav>
         )}
 
-        {produtos.length === 0 ? (
-          <section className="empty">
+        {/* CONTEÚDO */}
 
-            <div>
-              🍽️
+        <section className="content">
+
+          {produtos.length === 0 ? (
+            <div className="empty">
+              <div>🍽️</div>
+
+              <h2>
+                Nosso menu está sendo preparado
+              </h2>
+
+              <p>
+                Em breve teremos novidades.
+              </p>
+            </div>
+          ) : (
+            <>
+              {categorias.map(
+                (categoria, index) => {
+                  const itens =
+                    produtos.filter(
+                      (produto) =>
+                        produto.category_id ===
+                        categoria.id
+                    );
+
+                  if (!itens.length) {
+                    return null;
+                  }
+
+                  return (
+                    <Categoria
+                      key={categoria.id}
+                      categoria={categoria}
+                      produtos={itens}
+                      dinheiro={dinheiro}
+                      index={index}
+                      abrirProduto={abrirProduto}
+                    />
+                  );
+                }
+              )}
+
+              {produtosSemCategoria.length >
+                0 && (
+                <Categoria
+                  categoria={{
+                    id: 'outros',
+                    name: 'Outros'
+                  }}
+                  produtos={
+                    produtosSemCategoria
+                  }
+                  dinheiro={dinheiro}
+                  index={categorias.length}
+                  abrirProduto={abrirProduto}
+                />
+              )}
+            </>
+          )}
+
+        </section>
+
+        {/* RODAPÉ */}
+
+        <footer className="restaurantFooter">
+
+          <div className="footerInfo">
+
+            {restaurante.address && (
+              <div className="footerItem">
+
+                <span className="footerIcon">
+                  📍
+                </span>
+
+                <div>
+                  <strong>
+                    {restaurante.address}
+                  </strong>
+
+                  <small>
+                    Endereço do restaurante
+                  </small>
+                </div>
+
+              </div>
+            )}
+
+            <div className="footerItem">
+
+              <span className="footerIcon">
+                🛵
+              </span>
+
+              <div>
+                <strong>
+                  {Number(
+                    restaurante.delivery_fee || 0
+                  ) === 0
+                    ? 'Entrega grátis'
+                    : `Entrega ${dinheiro(
+                        restaurante.delivery_fee
+                      )}`}
+                </strong>
+
+                {Number(
+                  restaurante.minimum_order || 0
+                ) > 0 && (
+                  <small>
+                    Mínimo{' '}
+                    {dinheiro(
+                      restaurante.minimum_order
+                    )}
+                  </small>
+                )}
+              </div>
+
             </div>
 
-            <h2>
-              Nosso menu está sendo preparado
-            </h2>
+            {restaurante.whatsapp && (
+              <div className="footerItem">
 
-            <p>
-              Em breve teremos novidades por aqui.
-            </p>
+                <span className="footerIcon">
+                  📱
+                </span>
 
-          </section>
-        ) : (
-          <section className="content">
+                <div>
+                  <strong>
+                    {restaurante.whatsapp}
+                  </strong>
 
-            {categorias.map(
-              (categoria, index) => {
-                const itens =
-                  produtos.filter(
-                    (produto) =>
-                      produto.category_id ===
-                      categoria.id
-                  );
+                  <small>
+                    Faça seu pedido
+                  </small>
+                </div>
 
-                if (!itens.length) {
-                  return null;
-                }
-
-                return (
-                  <Categoria
-                    key={categoria.id}
-                    categoria={categoria}
-                    produtos={itens}
-                    dinheiro={dinheiro}
-                    index={index}
-                    abrirProduto={abrirProduto}
-                  />
-                );
-              }
+              </div>
             )}
 
-            {produtosSemCategoria.length >
-              0 && (
-              <Categoria
-                categoria={{
-                  id: 'outros',
-                  name: 'Outros'
-                }}
-                produtos={
-                  produtosSemCategoria
-                }
-                dinheiro={dinheiro}
-                index={categorias.length}
-                abrirProduto={abrirProduto}
-              />
-            )}
+          </div>
 
-          </section>
-        )}
+          <div className="footerBrand">
 
-        <footer>
-          <div className="footerLine" />
+            <span />
 
-          <span>
-            EXPERIÊNCIA DIGITAL
-          </span>
+            <div>
+              <strong>
+                {restaurante.name}
+              </strong>
 
-          <strong>
+              <small>
+                CARDÁPIO DIGITAL
+              </small>
+            </div>
+
+            <span />
+
+          </div>
+
+          <p className="menuflow">
             MenuFlow
-          </strong>
+          </p>
+
         </footer>
 
       </div>
+
+      {/* MODAL */}
 
       {produtoAberto && (
         <div
@@ -747,6 +747,7 @@ export default function CardapioPublico() {
               e.stopPropagation()
             }
           >
+
             <div className="modalHandle" />
 
             <div className="modalTop">
@@ -782,7 +783,6 @@ export default function CardapioPublico() {
               {gruposDoProduto(
                 produtoAberto.id
               ).map((grupo) => {
-
                 const itens =
                   adicionaisDoGrupo(
                     grupo.id
@@ -814,8 +814,7 @@ export default function CardapioPublico() {
 
                           Escolha até{' '}
 
-                          {grupo.max_select ||
-                            1}
+                          {grupo.max_select || 1}
                         </small>
                       </div>
 
@@ -831,7 +830,6 @@ export default function CardapioPublico() {
 
                       {itens.map(
                         (adicional) => {
-
                           const marcado =
                             adicionalSelecionado(
                               grupo.id,
@@ -841,9 +839,7 @@ export default function CardapioPublico() {
                           return (
                             <button
                               type="button"
-                              key={
-                                adicional.id
-                              }
+                              key={adicional.id}
                               className={`addonItem ${
                                 marcado
                                   ? 'selected'
@@ -896,23 +892,17 @@ export default function CardapioPublico() {
             <div className="modalFooter">
 
               <div className="total">
-
-                <small>
-                  TOTAL
-                </small>
+                <small>TOTAL</small>
 
                 <strong>
                   {dinheiro(totalModal)}
                 </strong>
-
               </div>
 
               <button
                 type="button"
                 className="confirm"
-                onClick={
-                  confirmarProduto
-                }
+                onClick={confirmarProduto}
               >
                 Adicionar ao pedido
               </button>
@@ -934,7 +924,7 @@ export default function CardapioPublico() {
 
         body {
           margin: 0;
-          background: #090a0d;
+          background: #05070d;
         }
 
         button,
@@ -949,58 +939,50 @@ export default function CardapioPublico() {
         .page {
           min-height: 100vh;
 
-          background:
-            radial-gradient(
-              circle at 15% 5%,
-              color-mix(
-                in srgb,
-                var(--primary) 14%,
-                transparent
-              ),
-              transparent 30%
-            ),
-            radial-gradient(
-              circle at 90% 55%,
-              color-mix(
-                in srgb,
-                var(--primary) 5%,
-                transparent
-              ),
-              transparent 28%
-            ),
-            linear-gradient(
-              180deg,
-              #08090c 0%,
-              #101115 45%,
-              #08090b 100%
-            );
+          position: relative;
 
-          color: #f8f5ef;
+          overflow: hidden;
+
+          color: #f7f7f7;
 
           font-family:
             Arial,
             Helvetica,
             sans-serif;
 
-          position: relative;
-          overflow: hidden;
+          background:
+            radial-gradient(
+              circle at 50% -10%,
+              color-mix(
+                in srgb,
+                var(--primary) 12%,
+                transparent
+              ),
+              transparent 30%
+            ),
+            linear-gradient(
+              180deg,
+              #060811 0%,
+              #080a13 55%,
+              #05070b 100%
+            );
         }
 
         .menu {
-          width: 100%;
-          max-width: 920px;
-          min-height: 100vh;
-
-          margin: 0 auto;
-
           position: relative;
 
           z-index: 5;
 
-          padding-bottom: 40px;
+          width: 100%;
+
+          max-width: 1180px;
+
+          min-height: 100vh;
+
+          margin: 0 auto;
         }
 
-        .ambientLight {
+        .backgroundGlow {
           position: fixed;
 
           width: 400px;
@@ -1008,412 +990,287 @@ export default function CardapioPublico() {
 
           border-radius: 50%;
 
-          filter: blur(100px);
-
-          opacity: 0.09;
+          filter: blur(120px);
 
           pointer-events: none;
+
+          opacity: 0.08;
         }
 
-        .lightOne {
-          top: 5%;
-          left: -180px;
+        .glow1 {
+          left: -200px;
+          top: 30%;
 
           background:
             var(--primary);
         }
 
-        .lightTwo {
-          bottom: 5%;
-          right: -180px;
+        .glow2 {
+          right: -200px;
+          bottom: 10%;
 
           background:
             var(--primary);
         }
 
-        /* ==================================================
-           FUMAÇA NOVA
-           ================================================== */
+        /* FUMAÇA SUTIL */
 
-        .smokeLayer {
+        .smoke {
           position: fixed;
-          inset: 0;
 
-          z-index: 2;
+          bottom: -280px;
 
-          overflow: hidden;
+          width: 360px;
+          height: 360px;
+
+          border-radius: 50%;
+
+          background:
+            radial-gradient(
+              circle,
+              rgba(
+                255,
+                255,
+                255,
+                0.07
+              ),
+              rgba(
+                255,
+                255,
+                255,
+                0.02
+              ) 45%,
+              transparent 72%
+            );
+
+          filter: blur(38px);
 
           pointer-events: none;
 
-          opacity: 1;
+          z-index: 1;
+
+          opacity: 0;
+
+          will-change:
+            transform,
+            opacity;
         }
 
-        .smokeStream {
-          position: absolute;
-
-          bottom: -180px;
-
-          width: 180px;
-          height: 520px;
-
-          opacity: 0.55;
+        .smoke1 {
+          left: -120px;
 
           animation:
-            smokeTravel
-            15s
+            smokeFloatOne
+            22s
             linear
             infinite;
         }
 
-        .smokeLeft {
-          left: -35px;
-
-          animation-duration:
-            17s;
-        }
-
-        .smokeCenter {
-          left: 48%;
-
-          width: 130px;
-
-          opacity: 0.22;
-
-          animation-duration:
-            22s;
-
-          animation-delay:
-            -9s;
-        }
-
-        .smokeRight {
-          right: -45px;
-
-          animation-duration:
-            20s;
-
-          animation-delay:
-            -6s;
-        }
-
-        .smokePuff {
-          position: absolute;
-
-          display: block;
-
-          border-radius:
-            50%;
-
-          background:
-            radial-gradient(
-              ellipse at center,
-              rgba(
-                255,
-                255,
-                255,
-                0.16
-              )
-              0%,
-              rgba(
-                220,
-                225,
-                230,
-                0.08
-              )
-              35%,
-              rgba(
-                200,
-                205,
-                215,
-                0.025
-              )
-              58%,
-              transparent
-              75%
-            );
-
-          filter:
-            blur(18px);
-
-          mix-blend-mode:
-            screen;
+        .smoke2 {
+          right: -130px;
 
           animation:
-            smokeSway
-            7s
-            ease-in-out
+            smokeFloatTwo
+            27s
+            linear
             infinite
-            alternate;
+            7s;
         }
 
-        .puff1 {
-          width: 120px;
-          height: 170px;
-
-          left: 20px;
-          bottom: 0;
-
-          opacity: 0.75;
-        }
-
-        .puff2 {
-          width: 145px;
-          height: 190px;
-
-          left: -5px;
-          bottom: 115px;
-
-          opacity: 0.55;
-
-          animation-delay:
-            -2s;
-        }
-
-        .puff3 {
-          width: 115px;
-          height: 175px;
-
-          left: 45px;
-          bottom: 240px;
-
-          opacity: 0.4;
-
-          animation-delay:
-            -4s;
-        }
-
-        .puff4 {
-          width: 150px;
-          height: 200px;
-
-          left: 5px;
-          bottom: 345px;
-
-          opacity: 0.22;
-
-          animation-delay:
-            -5s;
-        }
-
-        @keyframes smokeTravel {
+        @keyframes smokeFloatOne {
           0% {
             transform:
               translate3d(
                 0,
-                160px,
+                0,
                 0
               )
-              scale(0.65);
+              scale(0.8);
 
             opacity: 0;
           }
 
-          12% {
-            opacity: 0.45;
+          15% {
+            opacity: 0.25;
           }
 
-          45% {
+          55% {
             transform:
               translate3d(
-                18px,
-                -35vh,
-                0
-              )
-              scale(1);
-
-            opacity: 0.5;
-          }
-
-          75% {
-            transform:
-              translate3d(
-                -12px,
-                -72vh,
+                80px,
+                -65vh,
                 0
               )
               scale(1.35);
 
-            opacity: 0.28;
+            opacity: 0.15;
           }
 
           100% {
             transform:
               translate3d(
-                25px,
+                -20px,
                 -125vh,
                 0
               )
-              scale(1.75);
+              scale(1.8);
 
             opacity: 0;
           }
         }
 
-        @keyframes smokeSway {
+        @keyframes smokeFloatTwo {
           0% {
             transform:
-              translateX(-16px)
-              rotate(-5deg)
-              scaleX(0.88);
+              translate3d(
+                0,
+                0,
+                0
+              )
+              scale(0.7);
+
+            opacity: 0;
           }
 
-          50% {
+          18% {
+            opacity: 0.2;
+          }
+
+          60% {
             transform:
-              translateX(15px)
-              rotate(4deg)
-              scaleX(1.08);
+              translate3d(
+                -90px,
+                -70vh,
+                0
+              )
+              scale(1.4);
+
+            opacity: 0.12;
           }
 
           100% {
             transform:
-              translateX(-4px)
-              rotate(-2deg)
-              scaleX(0.95);
+              translate3d(
+                20px,
+                -125vh,
+                0
+              )
+              scale(1.9);
+
+            opacity: 0;
           }
-        }
-
-        /* CAPA */
-
-        .cover {
-          height: 250px;
-
-          position: relative;
-
-          overflow: hidden;
-        }
-
-        .cover img {
-          width: 100%;
-          height: 100%;
-
-          object-fit: cover;
-
-          display: block;
-        }
-
-        .coverShade {
-          position: absolute;
-
-          inset: 0;
-
-          background:
-            linear-gradient(
-              180deg,
-              rgba(0, 0, 0, 0.1),
-              rgba(8, 9, 12, 0.3) 45%,
-              #08090c 100%
-            );
         }
 
         /* CABEÇALHO */
 
-        .header {
-          padding:
-            48px
-            28px
-            26px;
-        }
-
-        .header.withCover {
-          margin-top: -65px;
-
-          position: relative;
-
-          z-index: 5;
-        }
-
-        .brand {
-          display: flex;
-
-          align-items: center;
-
-          gap: 22px;
-        }
-
-        .logoBox {
-          width: 118px;
-          height: 118px;
-
-          flex:
-            0 0 118px;
+        .hero {
+          min-height: 170px;
 
           position: relative;
 
           display: flex;
 
           align-items: center;
+
           justify-content: center;
+
+          padding: 25px 24px;
 
           overflow: hidden;
 
-          border-radius: 28px;
-
-          border:
-            1px solid
-            color-mix(
-              in srgb,
-              var(--primary) 75%,
-              #ffffff
-            );
-
-          background:
-            #111216;
-
-          box-shadow:
-            0 18px 45px
-              rgba(0, 0, 0, 0.4),
-
-            0 0 28px
-              color-mix(
-                in srgb,
-                var(--primary) 14%,
-                transparent
-              );
-
-          isolation: isolate;
-        }
-
-        .logoBox::before {
-          content: '';
-
-          position: absolute;
-
-          inset: 5px;
-
-          border-radius: 23px;
-
-          border:
+          border-bottom:
             1px solid
             rgba(
               255,
               255,
               255,
-              0.08
+              0.12
+            );
+
+          background:
+            linear-gradient(
+              180deg,
+              rgba(
+                255,
+                255,
+                255,
+                0.025
+              ),
+              rgba(
+                0,
+                0,
+                0,
+                0.1
+              )
+            );
+        }
+
+        .heroDecoration {
+          position: absolute;
+
+          inset: 0;
+
+          background:
+            radial-gradient(
+              circle at 20% 20%,
+              color-mix(
+                in srgb,
+                var(--primary) 12%,
+                transparent
+              ),
+              transparent 30%
             );
 
           pointer-events: none;
-
-          z-index: 4;
         }
 
-        .logoGlow {
-          position: absolute;
+        .heroBrand {
+          position: relative;
 
-          width: 80%;
-          height: 80%;
+          z-index: 2;
 
-          border-radius: 50%;
+          display: flex;
 
-          background:
-            var(--primary);
+          align-items: center;
 
-          filter: blur(45px);
+          justify-content: center;
 
-          opacity: 0.12;
+          gap: 22px;
 
-          pointer-events: none;
+          width: 100%;
+        }
 
-          z-index: 1;
+        .logoBox,
+        .logoFallback {
+          width: 105px;
+          height: 105px;
+
+          flex:
+            0 0 105px;
+
+          border-radius: 22px;
+
+          position: relative;
+
+          overflow: hidden;
+
+          border:
+            1px solid
+            color-mix(
+              in srgb,
+              var(--primary) 60%,
+              #ffffff
+            );
+
+          background: #0b0d13;
+
+          box-shadow:
+            0 0 30px
+            color-mix(
+              in srgb,
+              var(--primary) 12%,
+              transparent
+            );
         }
 
         .logo {
@@ -1424,297 +1281,113 @@ export default function CardapioPublico() {
 
           object-fit: contain;
 
-          object-position: center;
-
           transform-origin:
             center center;
-
-          z-index: 2;
 
           user-select: none;
         }
 
         .logoFallback {
-          width: 118px;
-          height: 118px;
-
-          flex:
-            0 0 118px;
-
-          border-radius: 28px;
-
           display: grid;
-
           place-items: center;
 
-          font-size: 44px;
-
-          color: white;
-
-          background:
-            linear-gradient(
-              135deg,
-              var(--primary),
-              var(--secondary)
-            );
-
-          border:
-            1px solid
-            color-mix(
-              in srgb,
-              var(--primary) 70%,
-              white
-            );
+          font-size: 42px;
         }
 
-        .brandText {
+        .heroTitle {
+          text-align: center;
+
           min-width: 0;
         }
 
-        .premium {
-          color:
-            var(--primary);
+        .brandLine {
+          display: flex;
 
-          font-size: 10px;
+          align-items: center;
 
-          font-weight: 800;
+          justify-content: center;
 
-          letter-spacing:
-            2.4px;
+          gap: 10px;
+
+          margin-bottom: 5px;
         }
 
-        .brand h1 {
-          margin:
-            7px
-            0
-            9px;
+        .brandLine span {
+          width: 55px;
+          height: 1px;
+
+          background:
+            var(--primary);
+        }
+
+        .brandLine small {
+          color:
+            color-mix(
+              in srgb,
+              var(--primary) 75%,
+              white
+            );
+
+          letter-spacing: 3px;
+
+          font-size: 9px;
+        }
+
+        .hero h1 {
+          margin: 5px 0;
 
           font-size:
             clamp(
-              27px,
-              5vw,
-              43px
+              30px,
+              6vw,
+              52px
             );
 
           line-height: 1;
 
-          letter-spacing:
-            -1.2px;
+          text-transform: uppercase;
+
+          letter-spacing: -1px;
         }
 
-        .online {
-          display: flex;
+        .heroTitle p {
+          margin: 9px 0 0;
 
-          align-items: center;
+          font-size: 9px;
 
-          gap: 8px;
+          letter-spacing: 3px;
 
-          color: #c6c6c6;
-
-          font-size: 13px;
+          color: #b8b8b8;
         }
 
-        .onlineDot {
-          width: 8px;
-          height: 8px;
-
-          border-radius: 50%;
-
-          background: #2fd875;
-
-          box-shadow:
-            0 0 12px
-            #2fd875;
-        }
-
-        .goldLine {
-          height: 1px;
-
-          margin-top: 32px;
-
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              var(--primary),
-              transparent
-            );
-
-          opacity: 0.65;
-        }
-
-        /* INFORMAÇÕES */
-
-        .restaurantDetails {
-          margin:
-            0
-            28px;
-
-          padding: 15px;
-
-          display: grid;
-
-          grid-template-columns:
-            repeat(
-              3,
-              minmax(0, 1fr)
-            );
-
-          gap: 9px;
-
-          border-radius: 19px;
-
-          border:
-            1px solid
-            rgba(
-              255,
-              255,
-              255,
-              0.07
-            );
-
-          background:
-            rgba(
-              255,
-              255,
-              255,
-              0.025
-            );
-
-          backdrop-filter:
-            blur(15px);
-        }
-
-        .detail {
-          min-width: 0;
-
-          display: flex;
-
-          align-items: center;
-
-          gap: 11px;
-
-          padding: 10px;
-        }
-
-        .detailIcon {
-          font-size: 18px;
-        }
-
-        .detail div {
-          min-width: 0;
-        }
-
-        .detail small {
-          display: block;
-
-          color: #777b82;
-
-          font-size: 8px;
-
-          letter-spacing:
-            1.2px;
-
-          margin-bottom: 4px;
-        }
-
-        .detail strong {
-          display: block;
-
-          color: #e8e8e8;
-
-          font-size: 11px;
-
-          overflow: hidden;
-
-          text-overflow:
-            ellipsis;
-
-          white-space: nowrap;
-        }
-
-        /* CATEGORIAS */
+        /* NAVEGAÇÃO */
 
         .categoryNav {
-          padding:
-            24px
-            28px
-            5px;
+          position: sticky;
+
+          top: 0;
+
+          z-index: 100;
 
           display: flex;
 
-          gap: 9px;
+          gap: 12px;
 
           overflow-x: auto;
 
+          padding: 14px 24px;
+
           scrollbar-width: none;
-        }
-
-        .categoryNav::-webkit-scrollbar {
-          display: none;
-        }
-
-        .categoryNav button {
-          flex:
-            0 0 auto;
-
-          border:
-            1px solid
-            color-mix(
-              in srgb,
-              var(--primary) 32%,
-              #333
-            );
 
           background:
             rgba(
-              255,
-              255,
-              255,
-              0.035
+              5,
+              7,
+              13,
+              0.9
             );
 
-          color: #dedede;
-
-          border-radius:
-            100px;
-
-          padding:
-            10px
-            17px;
-
-          font-size: 12px;
-
-          font-weight: 700;
-
-          cursor: pointer;
-        }
-
-        .categoryNav button:active {
-          transform:
-            scale(0.95);
-
-          background:
-            var(--primary);
-
-          color: white;
-        }
-
-        .content {
-          padding:
-            0
-            28px
-            40px;
-        }
-
-        .empty {
-          margin:
-            50px
-            28px;
-
-          text-align: center;
-
-          border:
+          border-bottom:
             1px solid
             rgba(
               255,
@@ -1723,6 +1396,109 @@ export default function CardapioPublico() {
               0.08
             );
 
+          backdrop-filter:
+            blur(18px);
+        }
+
+        .categoryNav::-webkit-scrollbar {
+          display: none;
+        }
+
+        .categoryNav button {
+          flex:
+            1 0 auto;
+
+          min-width: 125px;
+
+          padding: 11px 20px;
+
+          border-radius: 100px;
+
+          border:
+            1px solid
+            rgba(
+              255,
+              255,
+              255,
+              0.18
+            );
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              0.02
+            );
+
+          color: #f4f4f4;
+
+          text-transform: uppercase;
+
+          font-size: 11px;
+
+          font-weight: 800;
+
+          cursor: pointer;
+
+          transition:
+            0.2s ease;
+        }
+
+        .categoryNav button:active {
+          background:
+            color-mix(
+              in srgb,
+              var(--primary) 22%,
+              transparent
+            );
+
+          border-color:
+            var(--primary);
+
+          box-shadow:
+            0 0 20px
+            color-mix(
+              in srgb,
+              var(--primary) 25%,
+              transparent
+            );
+
+          transform:
+            scale(0.96);
+        }
+
+        /* CONTEÚDO */
+
+        .content {
+          width: 100%;
+
+          padding:
+            10px
+            24px
+            45px;
+        }
+
+        .empty {
+          margin: 50px auto;
+
+          max-width: 700px;
+
+          padding: 50px 20px;
+
+          text-align: center;
+
+          border:
+            1px solid
+            rgba(
+              255,
+              255,
+              255,
+              0.1
+            );
+
+          border-radius: 22px;
+
           background:
             rgba(
               255,
@@ -1730,13 +1506,6 @@ export default function CardapioPublico() {
               255,
               0.025
             );
-
-          padding:
-            50px
-            25px;
-
-          border-radius:
-            25px;
         }
 
         .empty div {
@@ -1744,42 +1513,141 @@ export default function CardapioPublico() {
         }
 
         .empty p {
-          color: #858585;
+          color: #888;
         }
 
-        footer {
-          text-align: center;
+        /* RODAPÉ */
 
-          padding: 30px;
+        .restaurantFooter {
+          padding:
+            25px
+            24px
+            30px;
 
-          color: #777;
+          border-top:
+            1px solid
+            color-mix(
+              in srgb,
+              var(--primary) 40%,
+              #222
+            );
+
+          background:
+            rgba(
+              0,
+              0,
+              0,
+              0.22
+            );
+        }
+
+        .footerInfo {
+          display: grid;
+
+          grid-template-columns:
+            repeat(
+              3,
+              minmax(0, 1fr)
+            );
+
+          gap: 20px;
+
+          max-width: 900px;
+
+          margin: 0 auto;
+        }
+
+        .footerItem {
+          display: flex;
+
+          align-items: center;
+
+          gap: 12px;
+
+          min-width: 0;
+        }
+
+        .footerIcon {
+          font-size: 25px;
+        }
+
+        .footerItem div {
+          display: grid;
+
+          gap: 4px;
+
+          min-width: 0;
+        }
+
+        .footerItem strong {
+          font-size: 12px;
+
+          overflow: hidden;
+
+          text-overflow: ellipsis;
+        }
+
+        .footerItem small {
+          color: #888;
 
           font-size: 10px;
+        }
+
+        .footerBrand {
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          gap: 12px;
+
+          margin-top: 28px;
+
+          text-align: center;
+        }
+
+        .footerBrand > span {
+          width: 70px;
+          height: 1px;
+
+          background:
+            var(--primary);
+        }
+
+        .footerBrand div {
+          display: grid;
+
+          gap: 3px;
+        }
+
+        .footerBrand strong {
+          font-size: 12px;
+
+          text-transform: uppercase;
+        }
+
+        .footerBrand small {
+          color: #777;
+
+          font-size: 7px;
 
           letter-spacing: 2px;
         }
 
-        footer strong {
-          color:
-            var(--primary);
+        .menuflow {
+          margin:
+            15px
+            0
+            0;
 
-          margin-left: 5px;
-        }
+          text-align: center;
 
-        .footerLine {
-          height: 1px;
+          color: #505158;
 
-          margin-bottom: 30px;
+          font-size: 9px;
 
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              var(--primary),
-              transparent
-            );
-
-          opacity: 0.35;
+          letter-spacing: 2px;
         }
 
         /* MODAL */
@@ -1791,17 +1659,6 @@ export default function CardapioPublico() {
 
           z-index: 9999;
 
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.75
-            );
-
-          backdrop-filter:
-            blur(8px);
-
           display: flex;
 
           align-items: flex-end;
@@ -1809,6 +1666,17 @@ export default function CardapioPublico() {
           justify-content: center;
 
           padding: 20px;
+
+          background:
+            rgba(
+              0,
+              0,
+              0,
+              0.78
+            );
+
+          backdrop-filter:
+            blur(8px);
         }
 
         .modal {
@@ -1820,19 +1688,21 @@ export default function CardapioPublico() {
 
           overflow-y: auto;
 
-          background:
-            #111216;
+          padding: 24px;
+
+          border-radius: 25px;
+
+          color: white;
+
+          background: #101219;
 
           border:
             1px solid
             color-mix(
               in srgb,
-              var(--primary) 30%,
+              var(--primary) 35%,
               #333
             );
-
-          border-radius:
-            25px;
 
           box-shadow:
             0 -20px 70px
@@ -1840,10 +1710,8 @@ export default function CardapioPublico() {
               0,
               0,
               0,
-              0.6
+              0.65
             );
-
-          padding: 24px;
         }
 
         .modalHandle {
@@ -1852,14 +1720,14 @@ export default function CardapioPublico() {
           width: 45px;
           height: 4px;
 
-          border-radius: 10px;
-
-          background: #3c3d42;
-
           margin:
             0
             auto
             18px;
+
+          border-radius: 10px;
+
+          background: #3c3d42;
         }
 
         .modalTop {
@@ -1868,10 +1736,10 @@ export default function CardapioPublico() {
           justify-content:
             space-between;
 
-          gap: 20px;
-
           align-items:
             flex-start;
+
+          gap: 20px;
 
           padding-bottom: 20px;
 
@@ -1893,15 +1761,11 @@ export default function CardapioPublico() {
 
           font-weight: 900;
 
-          letter-spacing:
-            1.7px;
+          letter-spacing: 1.7px;
         }
 
         .modalTop h2 {
-          margin:
-            7px
-            0
-            7px;
+          margin: 7px 0;
 
           font-size: 27px;
         }
@@ -1961,17 +1825,11 @@ export default function CardapioPublico() {
           justify-content:
             space-between;
 
-          align-items:
-            flex-start;
-
           gap: 15px;
         }
 
         .addonGroup h3 {
-          margin:
-            0
-            0
-            4px;
+          margin: 0 0 4px;
 
           font-size: 17px;
         }
@@ -1981,7 +1839,7 @@ export default function CardapioPublico() {
         }
 
         .required {
-          flex-shrink: 0;
+          height: fit-content;
 
           color:
             var(--primary);
@@ -1990,12 +1848,9 @@ export default function CardapioPublico() {
             1px solid
             var(--primary);
 
-          padding:
-            5px
-            8px;
+          padding: 5px 8px;
 
-          border-radius:
-            100px;
+          border-radius: 100px;
 
           font-size: 7px;
 
@@ -2010,6 +1865,23 @@ export default function CardapioPublico() {
 
         .addonItem {
           width: 100%;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          gap: 15px;
+
+          padding: 14px;
+
+          text-align: left;
+
+          color: white;
+
+          border-radius: 14px;
 
           border:
             1px solid
@@ -2027,25 +1899,6 @@ export default function CardapioPublico() {
               255,
               0.025
             );
-
-          color: white;
-
-          border-radius:
-            14px;
-
-          padding:
-            14px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content:
-            space-between;
-
-          gap: 15px;
-
-          text-align: left;
 
           cursor: pointer;
         }
@@ -2079,11 +1932,11 @@ export default function CardapioPublico() {
         }
 
         .check {
-          width: 27px;
-          height: 27px;
+          width: 28px;
+          height: 28px;
 
           flex:
-            0 0 27px;
+            0 0 28px;
 
           display: grid;
 
@@ -2126,10 +1979,10 @@ export default function CardapioPublico() {
 
           background:
             rgba(
-              17,
+              16,
               18,
-              22,
-              0.96
+              25,
+              0.97
             );
 
           border-top:
@@ -2140,9 +1993,6 @@ export default function CardapioPublico() {
               255,
               0.08
             );
-
-          backdrop-filter:
-            blur(15px);
         }
 
         .total {
@@ -2156,8 +2006,7 @@ export default function CardapioPublico() {
 
           font-size: 8px;
 
-          letter-spacing:
-            1.5px;
+          letter-spacing: 1.5px;
         }
 
         .total strong {
@@ -2170,17 +2019,16 @@ export default function CardapioPublico() {
         .confirm {
           border: 0;
 
-          background:
-            var(--primary);
-
-          color: white;
-
-          border-radius:
-            12px;
-
           padding:
             14px
             18px;
+
+          border-radius: 12px;
+
+          color: white;
+
+          background:
+            var(--primary);
 
           font-weight: 800;
 
@@ -2189,131 +2037,131 @@ export default function CardapioPublico() {
 
         /* CELULAR */
 
-        @media (
-          max-width: 600px
-        ) {
-          .cover {
-            height: 190px;
+        @media (max-width: 650px) {
+          .menu {
+            max-width: none;
           }
 
-          .header {
+          .hero {
+            min-height: 145px;
+
             padding:
-              35px
-              20px
-              22px;
+              18px
+              15px;
           }
 
-          .header.withCover {
-            margin-top: -55px;
-          }
-
-          .brand {
-            gap: 15px;
+          .heroBrand {
+            gap: 12px;
           }
 
           .logoBox,
           .logoFallback {
-            width: 94px;
-            height: 94px;
+            width: 76px;
+            height: 76px;
 
-            flex-basis:
-              94px;
+            flex-basis: 76px;
 
-            border-radius:
-              23px;
+            border-radius: 17px;
           }
 
-          .logoBox::before {
-            border-radius:
-              18px;
-          }
-
-          .logoFallback {
-            font-size: 36px;
-          }
-
-          .brand h1 {
+          .hero h1 {
             font-size: 28px;
+
+            line-height: 0.98;
           }
 
-          .premium {
-            font-size: 9px;
-
-            letter-spacing:
-              1.8px;
+          .brandLine span {
+            width: 35px;
           }
 
-          .restaurantDetails {
-            margin:
-              0
-              20px;
+          .brandLine small {
+            font-size: 7px;
 
-            display: flex;
-
-            overflow-x: auto;
-
-            padding: 9px;
-
-            scrollbar-width: none;
+            letter-spacing: 2px;
           }
 
-          .restaurantDetails::-webkit-scrollbar {
-            display: none;
-          }
+          .heroTitle p {
+            font-size: 7px;
 
-          .detail {
-            flex:
-              0
-              0
-              auto;
-
-            min-width: 125px;
+            letter-spacing: 2px;
           }
 
           .categoryNav {
-            padding-left:
-              20px;
+            padding:
+              12px
+              14px;
 
-            padding-right:
-              20px;
+            gap: 9px;
+          }
+
+          .categoryNav button {
+            min-width: 120px;
+
+            padding:
+              10px
+              15px;
+
+            font-size: 10px;
           }
 
           .content {
-            padding-left:
-              20px;
-
-            padding-right:
-              20px;
+            padding:
+              4px
+              12px
+              30px;
           }
 
-          .smokeLeft {
-            left: -80px;
+          .restaurantFooter {
+            padding:
+              22px
+              16px
+              26px;
           }
 
-          .smokeRight {
-            right: -85px;
+          .footerInfo {
+            grid-template-columns:
+              repeat(
+                3,
+                minmax(0, 1fr)
+              );
+
+            gap: 8px;
           }
 
-          .smokeCenter {
-            left: 43%;
+          .footerItem {
+            align-items:
+              flex-start;
 
-            opacity: 0.13;
+            gap: 6px;
           }
 
-          .smokeStream {
-            transform:
-              scale(0.8);
+          .footerIcon {
+            font-size: 17px;
+          }
+
+          .footerItem strong {
+            font-size: 9px;
+          }
+
+          .footerItem small {
+            font-size: 7px;
+          }
+
+          .footerBrand {
+            margin-top: 22px;
           }
 
           .modalOverlay {
             padding: 0;
-
-            align-items:
-              flex-end;
           }
 
           .modal {
             max-height: 92vh;
+
+            padding:
+              15px
+              20px
+              20px;
 
             border-radius:
               25px
@@ -2324,11 +2172,6 @@ export default function CardapioPublico() {
             border-left: 0;
             border-right: 0;
             border-bottom: 0;
-
-            padding:
-              15px
-              20px
-              20px;
           }
 
           .modalHandle {
@@ -2355,29 +2198,25 @@ export default function CardapioPublico() {
           .confirm {
             padding:
               13px
-              15px;
+              14px;
 
-            font-size: 12px;
+            font-size: 11px;
           }
         }
 
-        @media (
-          prefers-reduced-motion:
-          reduce
-        ) {
-          .smokeStream,
-          .smokePuff {
+        @media (prefers-reduced-motion: reduce) {
+          .smoke {
             animation: none;
-          }
-
-          .smokeLayer {
-            opacity: 0.25;
           }
         }
       `}</style>
     </main>
   );
 }
+
+/* ============================================================
+   CATEGORIA
+============================================================ */
 
 function Categoria({
   categoria,
@@ -2395,11 +2234,12 @@ function Categoria({
           `${index * 0.08}s`
       }}
     >
+
       <div className="categoryHeader">
 
-        <div>
+        <div className="categoryTitle">
 
-          <span className="categoryNumber">
+          <span className="number">
             {String(index + 1).padStart(
               2,
               '0'
@@ -2412,7 +2252,13 @@ function Categoria({
 
         </div>
 
-        <div className="categoryLine" />
+        <div className="line" />
+
+        <span className="phrase">
+          SABOR
+          <br />
+          EM CADA PEDIDO
+        </span>
 
       </div>
 
@@ -2434,26 +2280,28 @@ function Categoria({
 
       <style jsx>{`
         .category {
-          padding-top: 42px;
+          width: 100%;
+
+          padding-top: 32px;
 
           scroll-margin-top:
-            20px;
+            75px;
 
           opacity: 0;
 
           animation:
-            revealCategory
-            0.65s
+            reveal
+            0.55s
             ease
             forwards;
         }
 
-        @keyframes revealCategory {
+        @keyframes reveal {
           from {
             opacity: 0;
 
             transform:
-              translateY(20px);
+              translateY(16px);
           }
 
           to {
@@ -2465,60 +2313,69 @@ function Categoria({
         }
 
         .categoryHeader {
+          width: 100%;
+
           display: flex;
 
           align-items:
             flex-end;
 
-          gap: 18px;
+          gap: 15px;
 
-          margin-bottom:
-            17px;
+          padding:
+            0
+            5px
+            15px;
         }
 
-        .categoryHeader
-          > div:first-child {
+        .categoryTitle {
           flex-shrink: 0;
         }
 
-        .categoryNumber {
+        .number {
           display: block;
+
+          margin-bottom: 5px;
 
           color:
             var(--primary);
 
-          font-size: 9px;
+          font-size: 10px;
 
-          font-weight: 800;
+          font-weight: 900;
 
-          letter-spacing:
-            2px;
-
-          margin-bottom: 5px;
+          letter-spacing: 2px;
         }
 
         h2 {
           margin: 0;
 
-          color: #f4f1eb;
+          color: #f5f5f5;
 
-          font-size: 28px;
+          font-size:
+            clamp(
+              25px,
+              5vw,
+              37px
+            );
 
-          line-height: 1;
+          line-height: 0.95;
 
           text-transform:
             uppercase;
 
           letter-spacing:
-            -0.5px;
+            -1px;
         }
 
-        .categoryLine {
+        .line {
           flex: 1;
+
+          min-width: 20px;
 
           height: 1px;
 
-          margin-bottom: 4px;
+          margin-bottom: 8px;
 
           background:
             linear-gradient(
@@ -2526,25 +2383,61 @@ function Categoria({
               var(--primary),
               transparent
             );
+        }
 
-          opacity: 0.45;
+        .phrase {
+          flex-shrink: 0;
+
+          margin-bottom: 1px;
+
+          color:
+            color-mix(
+              in srgb,
+              var(--primary) 55%,
+              #ffdca2
+            );
+
+          text-align: right;
+
+          font-size: 8px;
+
+          font-weight: 800;
+
+          line-height: 1.4;
+
+          letter-spacing:
+            1.5px;
         }
 
         .products {
           display: grid;
 
-          gap: 15px;
+          gap: 12px;
         }
 
-        @media (
-          max-width: 600px
-        ) {
+        @media (max-width: 650px) {
           .category {
-            padding-top: 35px;
+            padding-top: 28px;
+          }
+
+          .categoryHeader {
+            gap: 10px;
+
+            padding-bottom: 12px;
           }
 
           h2 {
-            font-size: 24px;
+            font-size: 27px;
+          }
+
+          .phrase {
+            max-width: 85px;
+
+            font-size: 7px;
+          }
+
+          .products {
+            gap: 10px;
           }
         }
       `}</style>
@@ -2552,21 +2445,25 @@ function Categoria({
   );
 }
 
+/* ============================================================
+   PRODUTO
+============================================================ */
+
 function Produto({
   produto,
   dinheiro,
   index,
   abrirProduto
 }) {
-  const [tocando, setTocando] =
+  const [pressionado, setPressionado] =
     useState(false);
 
   function clicar() {
-    setTocando(true);
+    setPressionado(true);
 
     setTimeout(() => {
-      setTocando(false);
-    }, 300);
+      setPressionado(false);
+    }, 220);
 
     abrirProduto(produto);
   }
@@ -2574,50 +2471,52 @@ function Produto({
   return (
     <article
       className={`product ${
-        tocando ? 'touch' : ''
+        pressionado ? 'pressed' : ''
       }`}
       style={{
         animationDelay:
-          `${index * 0.07}s`
+          `${index * 0.06}s`
       }}
     >
-      {produto.image_url && (
-        <div className="imageSide">
 
+      <div className="imageSide">
+
+        {produto.image_url ? (
           <img
             src={produto.image_url}
             alt={produto.name}
           />
+        ) : (
+          <div className="noImage">
+            🍽️
+          </div>
+        )}
 
-          <div className="imageShade" />
+        <div className="imageShade" />
 
-          {produto.featured && (
-            <span className="featured">
-              ★ DESTAQUE
-            </span>
-          )}
+        {produto.featured && (
+          <span className="featured">
+            ★ DESTAQUE
+          </span>
+        )}
 
-        </div>
-      )}
+      </div>
 
-      <div className="info">
+      <div className="productInfo">
 
-        {produto.featured &&
-          !produto.image_url && (
-            <span className="featuredText">
-              ★ DESTAQUE
-            </span>
-          )}
-
-        <div className="titleRow">
+        <div className="text">
 
           <h3>
             {produto.name}
           </h3>
 
-          <span className="titleLine" />
+          {produto.description && (
+            <p>
+              {produto.description}
+            </p>
+          )}
 
-          <strong>
+          <strong className="price">
             {dinheiro(
               produto.price
             )}
@@ -2625,14 +2524,9 @@ function Produto({
 
         </div>
 
-        {produto.description && (
-          <p>
-            {produto.description}
-          </p>
-        )}
-
         <button
           type="button"
+          className="add"
           onClick={clicar}
         >
           <span>
@@ -2646,109 +2540,95 @@ function Produto({
 
       </div>
 
-      <div className="cardGlow" />
+      <div className="edgeGlow" />
 
       <style jsx>{`
         .product {
-          min-height: 190px;
+          width: 100%;
+
+          min-height: 150px;
 
           display: grid;
 
           grid-template-columns:
             minmax(
-              230px,
-              43%
+              250px,
+              37%
             )
             1fr;
 
-          overflow: hidden;
-
           position: relative;
 
-          border-radius:
-            22px;
+          overflow: hidden;
+
+          border-radius: 20px;
 
           border:
             1px solid
             color-mix(
               in srgb,
-              var(--primary) 28%,
-              #313131
+              var(--primary) 32%,
+              #676767
             );
 
           background:
             linear-gradient(
-              135deg,
-              rgba(
-                255,
-                255,
-                255,
-                0.055
-              ),
-              rgba(
-                255,
-                255,
-                255,
-                0.018
-              )
-            ),
-            #121316;
+              120deg,
+              #15171c,
+              #0d1017
+            );
 
           box-shadow:
-            0 18px 50px
+            0 14px 40px
               rgba(
                 0,
                 0,
                 0,
-                0.28
+                0.25
               );
 
           opacity: 0;
 
           animation:
-            revealProduct
-            0.6s
+            productReveal
+            0.5s
             ease
             forwards;
 
           transition:
             transform
-              0.28s ease,
-            border-color
-              0.28s ease;
+            0.2s ease;
         }
 
-        @keyframes revealProduct {
+        @keyframes productReveal {
           from {
             opacity: 0;
 
             transform:
-              translateY(24px)
-              scale(0.98);
+              translateY(14px);
           }
 
           to {
             opacity: 1;
 
             transform:
-              translateY(0)
-              scale(1);
+              translateY(0);
           }
         }
 
-        .product.touch {
+        .product.pressed {
           transform:
-            scale(0.985);
+            scale(0.99);
         }
 
         .imageSide {
-          min-height: 190px;
-
           position: relative;
+
+          min-height: 150px;
 
           overflow: hidden;
 
-          background: #18191d;
+          background: #111;
         }
 
         .imageSide img {
@@ -2760,6 +2640,28 @@ function Produto({
           height: 100%;
 
           object-fit: cover;
+
+          display: block;
+        }
+
+        .noImage {
+          width: 100%;
+          height: 100%;
+
+          min-height: 150px;
+
+          display: grid;
+
+          place-items: center;
+
+          font-size: 38px;
+
+          background:
+            radial-gradient(
+              circle,
+              #1c2029,
+              #0d0f14
+            );
         }
 
         .imageShade {
@@ -2770,161 +2672,116 @@ function Produto({
           background:
             linear-gradient(
               90deg,
-              transparent 55%,
+              transparent 65%,
               rgba(
-                18,
-                19,
-                22,
-                0.6
+                13,
+                16,
+                23,
+                0.55
               )
             );
+
+          pointer-events: none;
         }
 
         .featured {
           position: absolute;
 
-          left: 14px;
-          top: 14px;
+          left: 10px;
+          top: 10px;
 
-          z-index: 2;
+          z-index: 3;
 
-          background:
-            rgba(
-              8,
-              8,
-              8,
-              0.75
-            );
+          padding:
+            5px
+            8px;
+
+          border-radius: 100px;
+
+          color:
+            var(--primary);
 
           border:
             1px solid
             var(--primary);
 
-          color:
-            var(--primary);
+          background:
+            rgba(
+              0,
+              0,
+              0,
+              0.7
+            );
 
-          padding:
-            7px
-            10px;
-
-          border-radius:
-            100px;
-
-          font-size: 8px;
+          font-size: 7px;
 
           font-weight: 900;
 
           letter-spacing: 1px;
         }
 
-        .info {
-          padding:
-            25px
-            25px
-            22px;
-
-          position: relative;
-
-          z-index: 2;
+        .productInfo {
+          min-width: 0;
 
           display: flex;
 
-          flex-direction: column;
+          align-items: center;
 
           justify-content:
-            center;
+            space-between;
+
+          gap: 20px;
+
+          padding:
+            20px
+            20px;
         }
 
-        .titleRow {
-          display: flex;
+        .text {
+          min-width: 0;
 
-          align-items:
-            center;
-
-          gap: 11px;
+          flex: 1;
         }
 
         h3 {
           margin: 0;
 
-          color: #f5f3ee;
+          color: #f7f7f7;
 
           font-size: 20px;
 
           line-height: 1.15;
         }
 
-        .titleLine {
-          flex: 1;
+        p {
+          margin:
+            6px
+            0
+            15px;
 
-          height: 1px;
+          color: #a4a6ab;
 
-          min-width: 12px;
+          font-size: 12px;
 
-          background:
-            linear-gradient(
-              90deg,
-              var(--primary),
-              transparent
-            );
-
-          opacity: 0.4;
+          line-height: 1.4;
         }
 
-        .titleRow strong {
-          flex-shrink: 0;
+        .price {
+          display: block;
 
           color:
             var(--primary);
 
-          font-size: 17px;
+          font-size: 21px;
+
+          line-height: 1;
         }
 
-        p {
-          color: #8e9095;
+        .add {
+          flex:
+            0 0 auto;
 
-          font-size: 12px;
-
-          line-height: 1.55;
-
-          margin:
-            11px
-            0
-            20px;
-
-          max-width: 430px;
-        }
-
-        button {
-          width: fit-content;
-
-          min-width: 126px;
-
-          border:
-            1px solid
-            color-mix(
-              in srgb,
-              var(--primary) 55%,
-              transparent
-            );
-
-          background:
-            color-mix(
-              in srgb,
-              var(--primary) 12%,
-              transparent
-            );
-
-          color: #f5f5f5;
-
-          border-radius:
-            11px;
-
-          padding:
-            10px
-            12px
-            10px
-            15px;
+          min-width: 145px;
 
           display: flex;
 
@@ -2935,6 +2792,35 @@ function Produto({
 
           gap: 18px;
 
+          padding:
+            10px
+            10px
+            10px
+            17px;
+
+          color: white;
+
+          border-radius: 100px;
+
+          border:
+            1px solid
+            var(--primary);
+
+          background:
+            color-mix(
+              in srgb,
+              var(--primary) 10%,
+              transparent
+            );
+
+          box-shadow:
+            0 0 20px
+            color-mix(
+              in srgb,
+              var(--primary) 8%,
+              transparent
+            );
+
           font-size: 11px;
 
           font-weight: 800;
@@ -2943,110 +2829,95 @@ function Produto({
         }
 
         .plus {
-          width: 22px;
-          height: 22px;
-
-          border-radius: 50%;
+          width: 31px;
+          height: 31px;
 
           display: grid;
 
           place-items: center;
 
-          background:
-            var(--primary);
+          border-radius: 50%;
 
           color: white;
 
-          font-size: 17px;
+          background:
+            var(--primary);
+
+          box-shadow:
+            0 0 14px
+            color-mix(
+              in srgb,
+              var(--primary) 55%,
+              transparent
+            );
+
+          font-size: 22px;
 
           line-height: 1;
         }
 
-        .featuredText {
-          color:
-            var(--primary);
-
-          font-size: 8px;
-
-          font-weight: 900;
-
-          letter-spacing:
-            1.5px;
-
-          margin-bottom: 10px;
-        }
-
-        .cardGlow {
+        .edgeGlow {
           position: absolute;
 
-          width: 180px;
-          height: 180px;
+          right: 0;
+          bottom: 0;
 
-          right: -100px;
-          bottom: -120px;
+          width: 45%;
+          height: 1px;
 
           background:
-            var(--primary);
+            linear-gradient(
+              90deg,
+              transparent,
+              var(--primary)
+            );
 
-          border-radius: 50%;
-
-          filter:
-            blur(80px);
-
-          opacity: 0.06;
+          opacity: 0.55;
 
           pointer-events: none;
         }
 
-        @media (
-          max-width: 600px
-        ) {
+        /* CELULAR */
+
+        @media (max-width: 650px) {
           .product {
-            min-height: 160px;
+            min-height: 132px;
 
             grid-template-columns:
-              42%
-              58%;
+              37%
+              63%;
 
-            border-radius:
-              18px;
+            border-radius: 17px;
           }
 
-          .imageSide {
-            min-height: 160px;
+          .imageSide,
+          .noImage {
+            min-height: 132px;
           }
 
-          .info {
+          .productInfo {
+            gap: 7px;
+
             padding:
-              18px
-              15px;
-          }
-
-          .titleRow {
-            display: block;
-          }
-
-          .titleLine {
-            display: none;
+              13px
+              10px
+              13px
+              12px;
           }
 
           h3 {
-            font-size: 17px;
-
-            margin-bottom: 7px;
-          }
-
-          .titleRow strong {
-            font-size: 16px;
+            font-size: 15px;
           }
 
           p {
-            font-size: 10px;
-
             margin:
-              8px
+              4px
               0
-              13px;
+              10px;
+
+            font-size: 9px;
+
+            line-height: 1.3;
 
             display:
               -webkit-box;
@@ -3059,26 +2930,64 @@ function Produto({
             overflow: hidden;
           }
 
-          button {
-            min-width: 105px;
+          .price {
+            font-size: 18px;
+          }
+
+          .add {
+            min-width: 0;
 
             padding:
-              8px
-              9px
-              8px
-              12px;
+              7px;
 
-            font-size: 10px;
+            border-radius: 100px;
 
-            gap: 10px;
+            gap: 0;
+          }
+
+          .add > span:first-child {
+            display: none;
           }
 
           .plus {
-            width: 20px;
-            height: 20px;
+            width: 29px;
+            height: 29px;
+
+            font-size: 21px;
+          }
+        }
+
+        @media (min-width: 420px) and (max-width: 650px) {
+          .productInfo {
+            padding:
+              14px
+              12px
+              14px
+              15px;
+          }
+
+          .add {
+            min-width: 108px;
+
+            padding:
+              7px
+              7px
+              7px
+              13px;
+
+            gap: 9px;
+          }
+
+          .add > span:first-child {
+            display: inline;
+          }
+
+          .plus {
+            width: 28px;
+            height: 28px;
           }
         }
       `}</style>
     </article>
   );
-        }
+          }
