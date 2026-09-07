@@ -15,17 +15,24 @@ export default function EditorRestaurante() {
 
   const [restaurante, setRestaurante] = useState(null);
   const [categorias, setCategorias] = useState([]);
+  const [produtos, setProdutos] = useState([]);
   const [tela, setTela] = useState('inicio');
 
   const [novaCategoria, setNovaCategoria] = useState('');
+
+  const [nomeProduto, setNomeProduto] = useState('');
+  const [descricaoProduto, setDescricaoProduto] = useState('');
+  const [precoProduto, setPrecoProduto] = useState('');
+  const [categoriaProduto, setCategoriaProduto] = useState('');
+  const [fotoProduto, setFotoProduto] = useState(null);
+  const [destaqueProduto, setDestaqueProduto] = useState(false);
+
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
   useEffect(() => {
-    if (id) {
-      carregarDados();
-    }
+    if (id) carregarDados();
   }, [id]);
 
   async function carregarDados() {
@@ -56,11 +63,23 @@ export default function EditorRestaurante() {
 
     if (categoryError) {
       console.error(categoryError);
-      setErro('Não foi possível carregar as categorias.');
+    }
+
+    const { data: productData, error: productError } =
+      await supabase
+        .from('products')
+        .select('*')
+        .eq('restaurant_id', id)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+
+    if (productError) {
+      console.error(productError);
     }
 
     setRestaurante(restaurantData);
     setCategorias(categoryData || []);
+    setProdutos(productData || []);
     setCarregando(false);
   }
 
@@ -68,7 +87,6 @@ export default function EditorRestaurante() {
     e.preventDefault();
 
     const nome = novaCategoria.trim();
-
     if (!nome || salvando) return;
 
     setSalvando(true);
@@ -86,8 +104,7 @@ export default function EditorRestaurante() {
       .single();
 
     if (error) {
-      console.error(error);
-      setErro(`Erro ao criar categoria: ${error.message}`);
+      setErro(`Erro: ${error.message}`);
       setSalvando(false);
       return;
     }
@@ -98,26 +115,23 @@ export default function EditorRestaurante() {
   }
 
   async function renomearCategoria(categoria) {
-    const novoNome = window.prompt(
+    const nome = window.prompt(
       'Novo nome da categoria:',
       categoria.name
     );
 
-    if (!novoNome || !novoNome.trim()) return;
+    if (!nome || !nome.trim()) return;
 
     const { data, error } = await supabase
       .from('categories')
-      .update({
-        name: novoNome.trim()
-      })
+      .update({ name: nome.trim() })
       .eq('id', categoria.id)
       .eq('restaurant_id', id)
       .select()
       .single();
 
     if (error) {
-      console.error(error);
-      setErro(`Erro ao editar categoria: ${error.message}`);
+      setErro(`Erro: ${error.message}`);
       return;
     }
 
@@ -129,11 +143,13 @@ export default function EditorRestaurante() {
   }
 
   async function excluirCategoria(categoria) {
-    const confirmou = window.confirm(
-      `Excluir a categoria "${categoria.name}"?`
-    );
-
-    if (!confirmou) return;
+    if (
+      !window.confirm(
+        `Excluir a categoria "${categoria.name}"?`
+      )
+    ) {
+      return;
+    }
 
     const { error } = await supabase
       .from('categories')
@@ -142,8 +158,7 @@ export default function EditorRestaurante() {
       .eq('restaurant_id', id);
 
     if (error) {
-      console.error(error);
-      setErro(`Erro ao excluir categoria: ${error.message}`);
+      setErro(`Erro: ${error.message}`);
       return;
     }
 
@@ -152,9 +167,161 @@ export default function EditorRestaurante() {
     );
   }
 
+  async function uploadFoto(file) {
+    if (!file) return null;
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error('A imagem deve ter no máximo 5 MB.');
+    }
+
+    const extensao =
+      file.name.split('.').pop()?.toLowerCase() || 'jpg';
+
+    const nomeArquivo =
+      `${id}/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}.${extensao}`;
+
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(nomeArquivo, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(nomeArquivo);
+
+    return data.publicUrl;
+  }
+
+  async function criarProduto(e) {
+    e.preventDefault();
+
+    if (!nomeProduto.trim() || !precoProduto || salvando) {
+      return;
+    }
+
+    setSalvando(true);
+    setErro('');
+
+    try {
+      let imageUrl = null;
+
+      if (fotoProduto) {
+        imageUrl = await uploadFoto(fotoProduto);
+      }
+
+      const preco = Number(
+        precoProduto.replace(',', '.')
+      );
+
+      if (Number.isNaN(preco) || preco < 0) {
+        throw new Error('Digite um preço válido.');
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .insert({
+          restaurant_id: id,
+          category_id: categoriaProduto || null,
+          name: nomeProduto.trim(),
+          description:
+            descricaoProduto.trim() || null,
+          price: preco,
+          image_url: imageUrl,
+          active: true,
+          featured: destaqueProduto,
+          sort_order: produtos.length
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProdutos((atual) => [...atual, data]);
+
+      setNomeProduto('');
+      setDescricaoProduto('');
+      setPrecoProduto('');
+      setCategoriaProduto('');
+      setFotoProduto(null);
+      setDestaqueProduto(false);
+
+      const input = document.getElementById('fotoProduto');
+      if (input) input.value = '';
+    } catch (error) {
+      console.error(error);
+      setErro(`Erro: ${error.message}`);
+    }
+
+    setSalvando(false);
+  }
+
+  async function alternarProduto(produto) {
+    const { data, error } = await supabase
+      .from('products')
+      .update({ active: !produto.active })
+      .eq('id', produto.id)
+      .eq('restaurant_id', id)
+      .select()
+      .single();
+
+    if (error) {
+      setErro(`Erro: ${error.message}`);
+      return;
+    }
+
+    setProdutos((atual) =>
+      atual.map((item) =>
+        item.id === produto.id ? data : item
+      )
+    );
+  }
+
+  async function excluirProduto(produto) {
+    if (
+      !window.confirm(
+        `Excluir o produto "${produto.name}"?`
+      )
+    ) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', produto.id)
+      .eq('restaurant_id', id);
+
+    if (error) {
+      setErro(`Erro: ${error.message}`);
+      return;
+    }
+
+    setProdutos((atual) =>
+      atual.filter((item) => item.id !== produto.id)
+    );
+  }
+
+  function dinheiro(valor) {
+    return Number(valor || 0).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  }
+
+  function voltarEditor() {
+    setTela('inicio');
+    setErro('');
+  }
+
   if (carregando) {
     return (
-      <main style={styles.centralizado}>
+      <main style={styles.center}>
         Carregando restaurante...
       </main>
     );
@@ -162,20 +329,8 @@ export default function EditorRestaurante() {
 
   if (!restaurante) {
     return (
-      <main style={styles.centralizado}>
-        <div>
-          <h2>Restaurante não encontrado</h2>
-          <p>{erro}</p>
-
-          <button
-            style={styles.primaryButton}
-            onClick={() => {
-              window.location.href = '/';
-            }}
-          >
-            ← Voltar
-          </button>
-        </div>
+      <main style={styles.center}>
+        Restaurante não encontrado.
       </main>
     );
   }
@@ -184,41 +339,22 @@ export default function EditorRestaurante() {
     return (
       <main style={styles.page}>
         <section style={styles.container}>
-          <button
-            style={styles.back}
-            onClick={() => {
-              setTela('inicio');
-              setErro('');
-            }}
-          >
+          <button style={styles.back} onClick={voltarEditor}>
             ← Voltar ao editor
           </button>
 
-          <div style={styles.categoryHeader}>
-            <div>
-              <p style={styles.eyebrow}>
-                {restaurante.name.toUpperCase()}
-              </p>
+          <p style={styles.eyebrow}>
+            {restaurante.name.toUpperCase()}
+          </p>
 
-              <h1 style={styles.title}>
-                Categorias
-              </h1>
+          <h1 style={styles.title}>Categorias</h1>
 
-              <p style={styles.subtitle}>
-                Organize os produtos do seu cardápio.
-              </p>
-            </div>
-
-            <span style={styles.counter}>
-              {categorias.length}{' '}
-              {categorias.length === 1
-                ? 'categoria'
-                : 'categorias'}
-            </span>
-          </div>
+          <p style={styles.subtitle}>
+            Organize os produtos do seu cardápio.
+          </p>
 
           <form
-            style={styles.categoryForm}
+            style={styles.formBox}
             onSubmit={criarCategoria}
           >
             <input
@@ -228,90 +364,251 @@ export default function EditorRestaurante() {
                 setNovaCategoria(e.target.value)
               }
               placeholder="Ex.: Pizzas"
-              maxLength={60}
             />
 
+            <button style={styles.primary} type="submit">
+              + Adicionar
+            </button>
+          </form>
+
+          {erro && <div style={styles.error}>{erro}</div>}
+
+          <div style={styles.list}>
+            {categorias.map((categoria) => (
+              <div
+                key={categoria.id}
+                style={styles.listItem}
+              >
+                <div>
+                  <strong>{categoria.name}</strong>
+                </div>
+
+                <div style={styles.actions}>
+                  <button
+                    style={styles.secondary}
+                    onClick={() =>
+                      renomearCategoria(categoria)
+                    }
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    style={styles.danger}
+                    onClick={() =>
+                      excluirCategoria(categoria)
+                    }
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (tela === 'produtos') {
+    return (
+      <main style={styles.page}>
+        <section style={styles.container}>
+          <button style={styles.back} onClick={voltarEditor}>
+            ← Voltar ao editor
+          </button>
+
+          <p style={styles.eyebrow}>
+            {restaurante.name.toUpperCase()}
+          </p>
+
+          <h1 style={styles.title}>Produtos</h1>
+
+          <p style={styles.subtitle}>
+            Cadastre os itens do cardápio.
+          </p>
+
+          <form
+            style={styles.productForm}
+            onSubmit={criarProduto}
+          >
+            <h2 style={styles.formTitle}>
+              Novo produto
+            </h2>
+
+            <label style={styles.label}>
+              Nome *
+              <input
+                style={styles.input}
+                value={nomeProduto}
+                onChange={(e) =>
+                  setNomeProduto(e.target.value)
+                }
+                placeholder="Ex.: Pizza de Frango"
+                required
+              />
+            </label>
+
+            <label style={styles.label}>
+              Categoria
+              <select
+                style={styles.input}
+                value={categoriaProduto}
+                onChange={(e) =>
+                  setCategoriaProduto(e.target.value)
+                }
+              >
+                <option value="">
+                  Sem categoria
+                </option>
+
+                {categorias.map((categoria) => (
+                  <option
+                    key={categoria.id}
+                    value={categoria.id}
+                  >
+                    {categoria.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={styles.label}>
+              Descrição
+              <textarea
+                style={styles.textarea}
+                value={descricaoProduto}
+                onChange={(e) =>
+                  setDescricaoProduto(e.target.value)
+                }
+                placeholder="Ingredientes e detalhes..."
+              />
+            </label>
+
+            <label style={styles.label}>
+              Preço *
+              <input
+                style={styles.input}
+                value={precoProduto}
+                onChange={(e) =>
+                  setPrecoProduto(e.target.value)
+                }
+                placeholder="Ex.: 39,90"
+                inputMode="decimal"
+                required
+              />
+            </label>
+
+            <label style={styles.label}>
+              Foto
+              <input
+                id="fotoProduto"
+                style={styles.input}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) =>
+                  setFotoProduto(
+                    e.target.files?.[0] || null
+                  )
+                }
+              />
+              <small style={styles.hint}>
+                JPG, PNG ou WebP. Máximo 5 MB.
+              </small>
+            </label>
+
+            <label style={styles.checkLabel}>
+              <input
+                type="checkbox"
+                checked={destaqueProduto}
+                onChange={(e) =>
+                  setDestaqueProduto(e.target.checked)
+                }
+              />
+              Marcar como destaque
+            </label>
+
             <button
-              style={styles.addButton}
+              style={styles.primary}
               type="submit"
               disabled={salvando}
             >
               {salvando
                 ? 'Salvando...'
-                : '+ Adicionar'}
+                : '+ Cadastrar produto'}
             </button>
           </form>
 
-          {erro && (
-            <div style={styles.error}>
-              {erro}
-            </div>
-          )}
+          {erro && <div style={styles.error}>{erro}</div>}
 
-          {categorias.length === 0 ? (
-            <div style={styles.empty}>
-              <div style={styles.emptyIcon}>📂</div>
+          <h2 style={styles.sectionTitle}>
+            Produtos cadastrados ({produtos.length})
+          </h2>
 
-              <h3 style={styles.emptyTitle}>
-                Nenhuma categoria ainda
-              </h3>
+          <div style={styles.productGrid}>
+            {produtos.map((produto) => (
+              <article
+                key={produto.id}
+                style={styles.productCard}
+              >
+                {produto.image_url ? (
+                  <img
+                    src={produto.image_url}
+                    alt={produto.name}
+                    style={styles.productImage}
+                  />
+                ) : (
+                  <div style={styles.noImage}>🍕</div>
+                )}
 
-              <p style={styles.emptyText}>
-                Comece criando Pizzas, Bebidas,
-                Porções ou qualquer categoria
-                que seu restaurante precisar.
-              </p>
-            </div>
-          ) : (
-            <div style={styles.categoryList}>
-              {categorias.map((categoria, index) => (
-                <div
-                  style={styles.categoryItem}
-                  key={categoria.id}
-                >
-                  <div style={styles.categoryInfo}>
-                    <div style={styles.categoryIcon}>
-                      📁
-                    </div>
+                <div style={styles.productBody}>
+                  <div style={styles.productTop}>
+                    <strong style={styles.productName}>
+                      {produto.name}
+                    </strong>
 
-                    <div>
-                      <strong
-                        style={styles.categoryName}
-                      >
-                        {categoria.name}
-                      </strong>
-
-                      <small
-                        style={styles.categorySmall}
-                      >
-                        Categoria {index + 1}
-                      </small>
-                    </div>
+                    {!produto.active && (
+                      <span style={styles.inactive}>
+                        Inativo
+                      </span>
+                    )}
                   </div>
 
-                  <div style={styles.categoryActions}>
+                  {produto.description && (
+                    <p style={styles.description}>
+                      {produto.description}
+                    </p>
+                  )}
+
+                  <strong style={styles.price}>
+                    {dinheiro(produto.price)}
+                  </strong>
+
+                  <div style={styles.actions}>
                     <button
-                      style={styles.editButton}
+                      style={styles.secondary}
                       onClick={() =>
-                        renomearCategoria(categoria)
+                        alternarProduto(produto)
                       }
                     >
-                      Editar
+                      {produto.active
+                        ? 'Desativar'
+                        : 'Ativar'}
                     </button>
 
                     <button
-                      style={styles.deleteButton}
+                      style={styles.danger}
                       onClick={() =>
-                        excluirCategoria(categoria)
+                        excluirProduto(produto)
                       }
                     >
                       Excluir
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              </article>
+            ))}
+          </div>
         </section>
       </main>
     );
@@ -346,107 +643,73 @@ export default function EditorRestaurante() {
           </div>
 
           <span style={styles.badge}>
-            {restaurante.status === 'active'
-              ? 'Ativo'
-              : restaurante.status === 'paused'
-              ? 'Pausado'
-              : 'Demonstração'}
+            Demonstração
           </span>
         </header>
-
-        {erro && (
-          <div style={styles.error}>
-            {erro}
-          </div>
-        )}
 
         <section style={styles.grid}>
           <button
             style={styles.card}
-            onClick={() => {
-              setTela('categorias');
-              setErro('');
-            }}
+            onClick={() => setTela('categorias')}
           >
             <span style={styles.icon}>📂</span>
-
             <strong style={styles.cardTitle}>
               Categorias
             </strong>
-
             <small style={styles.cardText}>
-              {categorias.length === 0
-                ? 'Pizzas, bebidas, porções e mais.'
-                : `${categorias.length} ${
-                    categorias.length === 1
-                      ? 'categoria cadastrada'
-                      : 'categorias cadastradas'
-                  }`}
+              {categorias.length} cadastradas
             </small>
           </button>
 
-          <button style={styles.card}>
+          <button
+            style={styles.card}
+            onClick={() => setTela('produtos')}
+          >
             <span style={styles.icon}>🍕</span>
-
             <strong style={styles.cardTitle}>
               Produtos
             </strong>
-
             <small style={styles.cardText}>
-              Cadastre produtos, preços e fotos.
+              {produtos.length} cadastrados
             </small>
           </button>
 
-          <button style={styles.card}>
-            <span style={styles.icon}>➕</span>
+          <EditorCard
+            icon="➕"
+            title="Adicionais"
+            text="Bordas, sabores e complementos."
+          />
 
-            <strong style={styles.cardTitle}>
-              Adicionais
-            </strong>
+          <EditorCard
+            icon="🎨"
+            title="Aparência"
+            text="Logo, capa e cores do cardápio."
+          />
 
-            <small style={styles.cardText}>
-              Bordas, sabores e complementos.
-            </small>
-          </button>
+          <EditorCard
+            icon="📱"
+            title="Informações"
+            text="WhatsApp, endereço e entrega."
+          />
 
-          <button style={styles.card}>
-            <span style={styles.icon}>🎨</span>
-
-            <strong style={styles.cardTitle}>
-              Aparência
-            </strong>
-
-            <small style={styles.cardText}>
-              Logo, capa e cores do cardápio.
-            </small>
-          </button>
-
-          <button style={styles.card}>
-            <span style={styles.icon}>📱</span>
-
-            <strong style={styles.cardTitle}>
-              Informações
-            </strong>
-
-            <small style={styles.cardText}>
-              WhatsApp, endereço e entrega.
-            </small>
-          </button>
-
-          <button style={styles.card}>
-            <span style={styles.icon}>👁️</span>
-
-            <strong style={styles.cardTitle}>
-              Visualizar cardápio
-            </strong>
-
-            <small style={styles.cardText}>
-              Veja como ficará para o cliente.
-            </small>
-          </button>
+          <EditorCard
+            icon="👁️"
+            title="Visualizar cardápio"
+            text="Veja como ficará para o cliente."
+          />
         </section>
       </section>
     </main>
+  );
+}
+
+function EditorCard({ icon, title, text }) {
+  return (
+    <button style={styles.card}>
+      <span style={styles.icon}>{icon}</span>
+      <strong style={styles.cardTitle}>{title}</strong>
+      <small style={styles.cardText}>{text}</small>
+    </button>
   );
 }
 
@@ -464,51 +727,44 @@ const styles = {
     margin: '0 auto'
   },
 
-  centralizado: {
+  center: {
     minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '30px',
-    fontFamily: 'Arial, sans-serif',
-    textAlign: 'center'
+    fontFamily: 'Arial, sans-serif'
   },
 
   header: {
-    marginBottom: '35px',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '20px'
+    gap: '20px',
+    marginBottom: '35px'
   },
 
   back: {
-    border: 'none',
+    border: 0,
     background: 'transparent',
-    padding: '0',
-    marginBottom: '25px',
-    fontSize: '15px',
     fontWeight: '700',
+    marginBottom: '25px',
     cursor: 'pointer',
-    color: '#111827'
+    padding: 0
   },
 
   eyebrow: {
     color: '#6d5dfc',
     fontWeight: '800',
     fontSize: '12px',
-    letterSpacing: '1.5px',
-    margin: '0 0 8px'
+    letterSpacing: '1.5px'
   },
 
   title: {
     fontSize: '34px',
-    margin: '0 0 8px'
+    margin: '8px 0'
   },
 
   subtitle: {
     color: '#6b7280',
-    margin: '0',
     lineHeight: '1.5'
   },
 
@@ -516,9 +772,9 @@ const styles = {
     background: '#fff4c2',
     color: '#8a6500',
     padding: '10px 15px',
+    height: 'fit-content',
     borderRadius: '30px',
-    fontWeight: '700',
-    fontSize: '13px'
+    fontWeight: '700'
   },
 
   grid: {
@@ -529,17 +785,16 @@ const styles = {
   },
 
   card: {
-    background: '#ffffff',
+    background: '#fff',
     border: '1px solid #e5e7eb',
     borderRadius: '20px',
     padding: '28px',
-    textAlign: 'left',
-    cursor: 'pointer',
     minHeight: '180px',
+    textAlign: 'left',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
-    boxShadow: '0 6px 20px rgba(0,0,0,0.04)'
+    cursor: 'pointer'
   },
 
   icon: {
@@ -553,167 +808,192 @@ const styles = {
   },
 
   cardText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    lineHeight: '1.5'
+    color: '#6b7280'
   },
 
-  categoryHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    gap: '20px',
-    marginBottom: '28px'
-  },
-
-  counter: {
-    background: '#ede9fe',
-    color: '#6d5dfc',
-    padding: '9px 14px',
-    borderRadius: '30px',
-    fontWeight: '700',
-    fontSize: '13px'
-  },
-
-  categoryForm: {
-    background: '#ffffff',
-    border: '1px solid #e5e7eb',
+  formBox: {
+    background: '#fff',
+    padding: '18px',
     borderRadius: '18px',
-    padding: '16px',
     display: 'flex',
     gap: '10px',
-    marginBottom: '22px'
+    margin: '25px 0'
+  },
+
+  productForm: {
+    background: '#fff',
+    padding: '24px',
+    borderRadius: '20px',
+    display: 'grid',
+    gap: '17px',
+    margin: '25px 0'
+  },
+
+  formTitle: {
+    margin: 0
+  },
+
+  label: {
+    display: 'grid',
+    gap: '7px',
+    fontWeight: '700'
   },
 
   input: {
-    flex: 1,
-    minWidth: 0,
-    border: '1px solid #e5e7eb',
-    borderRadius: '12px',
+    width: '100%',
+    boxSizing: 'border-box',
     padding: '14px',
+    border: '1px solid #d1d5db',
+    borderRadius: '11px',
     fontSize: '16px',
-    outline: 'none'
+    background: '#fff'
   },
 
-  addButton: {
-    border: 'none',
+  textarea: {
+    width: '100%',
+    minHeight: '90px',
+    boxSizing: 'border-box',
+    padding: '14px',
+    border: '1px solid #d1d5db',
+    borderRadius: '11px',
+    fontSize: '16px',
+    resize: 'vertical'
+  },
+
+  checkLabel: {
+    display: 'flex',
+    gap: '9px',
+    alignItems: 'center',
+    fontWeight: '700'
+  },
+
+  hint: {
+    color: '#6b7280',
+    fontWeight: '400'
+  },
+
+  primary: {
+    border: 0,
     background: '#6d5dfc',
-    color: '#ffffff',
-    borderRadius: '12px',
-    padding: '13px 18px',
-    fontWeight: '700',
+    color: '#fff',
+    borderRadius: '11px',
+    padding: '14px 18px',
+    fontWeight: '800',
     cursor: 'pointer'
   },
 
-  categoryList: {
+  secondary: {
+    border: '1px solid #ddd6fe',
+    background: '#f5f3ff',
+    color: '#6d5dfc',
+    borderRadius: '9px',
+    padding: '9px 12px',
+    fontWeight: '700'
+  },
+
+  danger: {
+    border: '1px solid #fecaca',
+    background: '#fff1f2',
+    color: '#dc2626',
+    borderRadius: '9px',
+    padding: '9px 12px',
+    fontWeight: '700'
+  },
+
+  error: {
+    background: '#fff1f2',
+    color: '#b91c1c',
+    padding: '13px',
+    borderRadius: '11px',
+    margin: '15px 0'
+  },
+
+  list: {
     display: 'grid',
     gap: '12px'
   },
 
-  categoryItem: {
-    background: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '16px',
+  listItem: {
+    background: '#fff',
     padding: '18px',
+    borderRadius: '15px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: '15px'
   },
 
-  categoryInfo: {
+  actions: {
     display: 'flex',
-    alignItems: 'center',
-    gap: '13px'
+    gap: '8px',
+    marginTop: '15px',
+    flexWrap: 'wrap'
   },
 
-  categoryIcon: {
-    width: '45px',
-    height: '45px',
-    borderRadius: '12px',
-    background: '#f5f3ff',
+  sectionTitle: {
+    margin: '35px 0 18px'
+  },
+
+  productGrid: {
+    display: 'grid',
+    gridTemplateColumns:
+      'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: '18px'
+  },
+
+  productCard: {
+    background: '#fff',
+    borderRadius: '18px',
+    overflow: 'hidden',
+    border: '1px solid #e5e7eb'
+  },
+
+  productImage: {
+    width: '100%',
+    height: '190px',
+    objectFit: 'cover',
+    display: 'block'
+  },
+
+  noImage: {
+    height: '190px',
+    background: '#f3f4f6',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '22px'
+    fontSize: '55px'
   },
 
-  categoryName: {
-    display: 'block',
-    fontSize: '16px',
-    marginBottom: '4px'
+  productBody: {
+    padding: '18px'
   },
 
-  categorySmall: {
-    color: '#9ca3af'
-  },
-
-  categoryActions: {
+  productTop: {
     display: 'flex',
-    gap: '8px'
+    justifyContent: 'space-between',
+    gap: '10px'
   },
 
-  editButton: {
-    border: '1px solid #ddd6fe',
-    background: '#f5f3ff',
-    color: '#6d5dfc',
-    borderRadius: '9px',
-    padding: '9px 12px',
-    fontWeight: '700',
-    cursor: 'pointer'
+  productName: {
+    fontSize: '18px'
   },
 
-  deleteButton: {
-    border: '1px solid #fecaca',
-    background: '#fff1f2',
-    color: '#dc2626',
-    borderRadius: '9px',
-    padding: '9px 12px',
-    fontWeight: '700',
-    cursor: 'pointer'
-  },
-
-  empty: {
-    background: '#ffffff',
-    border: '1px dashed #d1d5db',
-    borderRadius: '20px',
-    padding: '55px 25px',
-    textAlign: 'center'
-  },
-
-  emptyIcon: {
-    fontSize: '42px',
-    marginBottom: '15px'
-  },
-
-  emptyTitle: {
-    margin: '0 0 8px',
-    fontSize: '19px'
-  },
-
-  emptyText: {
+  description: {
     color: '#6b7280',
-    maxWidth: '430px',
-    margin: '0 auto',
-    lineHeight: '1.6'
+    lineHeight: '1.5'
   },
 
-  error: {
-    background: '#fff1f2',
-    color: '#b91c1c',
-    border: '1px solid #fecaca',
-    borderRadius: '12px',
-    padding: '13px 15px',
-    marginBottom: '18px'
+  price: {
+    display: 'block',
+    fontSize: '20px',
+    marginTop: '12px'
   },
 
-  primaryButton: {
-    marginTop: '20px',
-    background: '#6d5dfc',
-    color: '#ffffff',
-    border: 'none',
-    padding: '12px 20px',
-    borderRadius: '10px',
-    fontWeight: '700'
+  inactive: {
+    background: '#f3f4f6',
+    padding: '5px 8px',
+    borderRadius: '8px',
+    color: '#6b7280',
+    fontSize: '11px'
   }
 };
