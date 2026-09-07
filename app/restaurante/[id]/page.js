@@ -55,6 +55,12 @@ export default function EditorRestaurante() {
   const [corPrimaria, setCorPrimaria] = useState('#6d5dfc');
   const [corSecundaria, setCorSecundaria] = useState('#111827');
 
+  // INFORMAÇÕES
+  const [whatsapp, setWhatsapp] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [taxaEntrega, setTaxaEntrega] = useState('0');
+  const [pedidoMinimo, setPedidoMinimo] = useState('0');
+
   // GERAL
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -188,6 +194,18 @@ export default function EditorRestaurante() {
       setCorSecundaria(
         restaurantData.secondary_color || '#111827'
       );
+
+      // Carrega as informações já salvas
+      setWhatsapp(restaurantData.whatsapp || '');
+      setEndereco(restaurantData.address || '');
+
+      setTaxaEntrega(
+        String(restaurantData.delivery_fee ?? 0).replace('.', ',')
+      );
+
+      setPedidoMinimo(
+        String(restaurantData.minimum_order ?? 0).replace('.', ',')
+      );
     } catch (error) {
       console.error(error);
 
@@ -239,7 +257,10 @@ export default function EditorRestaurante() {
       console.error(error);
 
       setErro(
-        `Erro: ${error?.message || 'Não foi possível criar a categoria.'}`
+        `Erro: ${
+          error?.message ||
+          'Não foi possível criar a categoria.'
+        }`
       );
     }
 
@@ -316,10 +337,7 @@ export default function EditorRestaurante() {
   // UPLOAD DE IMAGENS
   // ============================================================
 
-  async function uploadImagem(
-    file,
-    pasta = 'produtos'
-  ) {
+  async function uploadImagem(file, pasta = 'produtos') {
     if (!file) return null;
 
     const limite = 5 * 1024 * 1024;
@@ -411,10 +429,7 @@ export default function EditorRestaurante() {
           .replace(',', '.')
       );
 
-      if (
-        Number.isNaN(preco) ||
-        preco < 0
-      ) {
+      if (Number.isNaN(preco) || preco < 0) {
         throw new Error(
           'Digite um preço válido.'
         );
@@ -627,10 +642,7 @@ export default function EditorRestaurante() {
           .replace(',', '.')
       );
 
-      if (
-        Number.isNaN(preco) ||
-        preco < 0
-      ) {
+      if (Number.isNaN(preco) || preco < 0) {
         throw new Error(
           'Digite um preço válido.'
         );
@@ -800,14 +812,6 @@ export default function EditorRestaurante() {
         );
       }
 
-      /*
-        IMPORTANTE:
-        Aqui NÃO usamos .select().single().
-
-        Isso evita o erro:
-        "Cannot coerce the result to a single JSON object"
-      */
-
       const { error } = await supabase
         .from('restaurants')
         .update({
@@ -893,6 +897,115 @@ export default function EditorRestaurante() {
   }
 
   // ============================================================
+  // INFORMAÇÕES
+  // ============================================================
+
+  function converterDinheiro(valor) {
+    const texto = String(valor || '0')
+      .trim()
+      .replace(/\s/g, '')
+      .replace('R$', '');
+
+    if (!texto) return 0;
+
+    // Formato brasileiro: 1.234,56
+    if (texto.includes(',')) {
+      return Number(
+        texto
+          .replace(/\./g, '')
+          .replace(',', '.')
+      );
+    }
+
+    return Number(texto);
+  }
+
+  async function salvarInformacoes(e) {
+    if (e?.preventDefault) {
+      e.preventDefault();
+    }
+
+    if (salvando) return;
+
+    setSalvando(true);
+    setErro('');
+
+    try {
+      const taxa = converterDinheiro(
+        taxaEntrega
+      );
+
+      const minimo = converterDinheiro(
+        pedidoMinimo
+      );
+
+      if (
+        Number.isNaN(taxa) ||
+        taxa < 0
+      ) {
+        throw new Error(
+          'Digite uma taxa de entrega válida.'
+        );
+      }
+
+      if (
+        Number.isNaN(minimo) ||
+        minimo < 0
+      ) {
+        throw new Error(
+          'Digite um pedido mínimo válido.'
+        );
+      }
+
+      const { error } = await supabase
+        .from('restaurants')
+        .update({
+          whatsapp:
+            whatsapp.trim() || null,
+          address:
+            endereco.trim() || null,
+          delivery_fee: taxa,
+          minimum_order: minimo,
+          updated_at:
+            new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setRestaurante((atual) => ({
+        ...atual,
+        whatsapp:
+          whatsapp.trim() || null,
+        address:
+          endereco.trim() || null,
+        delivery_fee: taxa,
+        minimum_order: minimo
+      }));
+
+      alert(
+        'Informações salvas com sucesso!'
+      );
+    } catch (error) {
+      console.error(
+        'Erro ao salvar informações:',
+        error
+      );
+
+      setErro(
+        `Erro: ${
+          error?.message ||
+          'Não foi possível salvar as informações.'
+        }`
+      );
+    }
+
+    setSalvando(false);
+  }
+
+  // ============================================================
   // UTILIDADES
   // ============================================================
 
@@ -939,6 +1052,205 @@ export default function EditorRestaurante() {
             </p>
           )}
         </div>
+      </main>
+    );
+  }
+
+  // ============================================================
+  // TELA INFORMAÇÕES
+  // ============================================================
+
+  if (tela === 'informacoes') {
+    return (
+      <main style={styles.page}>
+        <section style={styles.container}>
+          <button
+            style={styles.back}
+            onClick={voltarEditor}
+          >
+            ← Voltar ao editor
+          </button>
+
+          <p style={styles.eyebrow}>
+            {restaurante.name.toUpperCase()}
+          </p>
+
+          <h1 style={styles.title}>
+            Informações
+          </h1>
+
+          <p style={styles.subtitle}>
+            Configure os dados de contato,
+            endereço e entrega.
+          </p>
+
+          <form
+            style={styles.productForm}
+            onSubmit={salvarInformacoes}
+          >
+            <h2 style={styles.formTitle}>
+              Dados do restaurante
+            </h2>
+
+            <label style={styles.label}>
+              WhatsApp
+
+              <input
+                style={styles.input}
+                type="tel"
+                inputMode="tel"
+                value={whatsapp}
+                onChange={(e) =>
+                  setWhatsapp(
+                    e.target.value
+                  )
+                }
+                placeholder="Ex.: (67) 99999-9999"
+              />
+
+              <small style={styles.hint}>
+                Número que receberá os pedidos
+                dos clientes.
+              </small>
+            </label>
+
+            <label style={styles.label}>
+              Endereço
+
+              <textarea
+                style={styles.textarea}
+                value={endereco}
+                onChange={(e) =>
+                  setEndereco(
+                    e.target.value
+                  )
+                }
+                placeholder="Ex.: Rua das Flores, 123 - Centro"
+              />
+            </label>
+
+            <label style={styles.label}>
+              Taxa de entrega
+
+              <div style={styles.moneyField}>
+                <span style={styles.moneyPrefix}>
+                  R$
+                </span>
+
+                <input
+                  style={styles.moneyInput}
+                  value={taxaEntrega}
+                  onChange={(e) =>
+                    setTaxaEntrega(
+                      e.target.value
+                    )
+                  }
+                  inputMode="decimal"
+                  placeholder="0,00"
+                />
+              </div>
+
+              <small style={styles.hint}>
+                Use 0,00 para entrega grátis.
+              </small>
+            </label>
+
+            <label style={styles.label}>
+              Pedido mínimo
+
+              <div style={styles.moneyField}>
+                <span style={styles.moneyPrefix}>
+                  R$
+                </span>
+
+                <input
+                  style={styles.moneyInput}
+                  value={pedidoMinimo}
+                  onChange={(e) =>
+                    setPedidoMinimo(
+                      e.target.value
+                    )
+                  }
+                  inputMode="decimal"
+                  placeholder="0,00"
+                />
+              </div>
+
+              <small style={styles.hint}>
+                Valor mínimo necessário para
+                fazer um pedido.
+              </small>
+            </label>
+
+            <div style={styles.infoPreview}>
+              <strong>
+                Prévia das informações
+              </strong>
+
+              <div style={styles.infoRow}>
+                <span>📱 WhatsApp</span>
+                <strong>
+                  {whatsapp ||
+                    'Não informado'}
+                </strong>
+              </div>
+
+              <div style={styles.infoRow}>
+                <span>📍 Endereço</span>
+                <strong>
+                  {endereco ||
+                    'Não informado'}
+                </strong>
+              </div>
+
+              <div style={styles.infoRow}>
+                <span>
+                  🛵 Taxa de entrega
+                </span>
+                <strong>
+                  {dinheiro(
+                    converterDinheiro(
+                      taxaEntrega
+                    ) || 0
+                  )}
+                </strong>
+              </div>
+
+              <div style={styles.infoRow}>
+                <span>
+                  🛒 Pedido mínimo
+                </span>
+                <strong>
+                  {dinheiro(
+                    converterDinheiro(
+                      pedidoMinimo
+                    ) || 0
+                  )}
+                </strong>
+              </div>
+            </div>
+
+            {erro && (
+              <div style={styles.error}>
+                {erro}
+              </div>
+            )}
+
+            <button
+              style={{
+                ...styles.primary,
+                background:
+                  corPrimaria
+              }}
+              type="submit"
+              disabled={salvando}
+            >
+              {salvando
+                ? 'Salvando...'
+                : 'Salvar informações'}
+            </button>
+          </form>
+        </section>
       </main>
     );
   }
@@ -2036,11 +2348,28 @@ export default function EditorRestaurante() {
             </small>
           </button>
 
-          <EditorCard
-            icon="📱"
-            title="Informações"
-            text="WhatsApp, endereço e entrega."
-          />
+          <button
+            style={styles.card}
+            onClick={() =>
+              setTela('informacoes')
+            }
+          >
+            <span style={styles.icon}>
+              📱
+            </span>
+
+            <strong
+              style={styles.cardTitle}
+            >
+              Informações
+            </strong>
+
+            <small
+              style={styles.cardText}
+            >
+              WhatsApp, endereço e entrega.
+            </small>
+          </button>
 
           <EditorCard
             icon="👁️"
@@ -2442,5 +2771,48 @@ const styles = {
     borderRadius: '10px',
     color: '#fff',
     fontWeight: '800'
+  },
+
+  moneyField: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid #d1d5db',
+    borderRadius: '11px',
+    overflow: 'hidden',
+    background: '#fff'
+  },
+
+  moneyPrefix: {
+    padding: '14px',
+    background: '#f3f4f6',
+    color: '#374151',
+    fontWeight: '800',
+    borderRight: '1px solid #d1d5db'
+  },
+
+  moneyInput: {
+    width: '100%',
+    border: 0,
+    outline: 'none',
+    padding: '14px',
+    fontSize: '16px'
+  },
+
+  infoPreview: {
+    display: 'grid',
+    gap: '14px',
+    background: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: '16px',
+    padding: '18px'
+  },
+
+  infoRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '20px',
+    paddingTop: '10px',
+    borderTop: '1px solid #e5e7eb'
   }
 };
