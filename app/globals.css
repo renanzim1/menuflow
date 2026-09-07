@@ -4,6 +4,13 @@
   padding: 0;
 }
 
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 :root {
   --bg: #f5f7fb;
   --card: #ffffff;
@@ -29,12 +36,18 @@ button {
   cursor: pointer;
 }
 
+/* =========================================================
+   DASHBOARD
+   Todas as regras abaixo ficam presas ao .dashboard
+   para NÃO interferirem no cardápio público.
+========================================================= */
+
 .dashboard {
   min-height: 100vh;
   display: flex;
 }
 
-.sidebar {
+.dashboard .sidebar {
   width: 250px;
   background: #111827;
   color: white;
@@ -43,23 +56,23 @@ button {
   inset: 0 auto 0 0;
 }
 
-.logo {
+.dashboard .logo {
   font-size: 27px;
   font-weight: 900;
   padding: 0 12px 32px;
 }
 
-.logo span {
+.dashboard .logo span {
   color: #8b7fff;
 }
 
-.sidebar nav {
+.dashboard .sidebar nav {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.sidebar nav button {
+.dashboard .sidebar nav button {
   border: 0;
   background: transparent;
   color: #aeb5c2;
@@ -68,43 +81,59 @@ button {
   text-align: left;
 }
 
-.sidebar nav button:hover,
-.sidebar nav button.active {
+.dashboard .sidebar nav button:hover,
+.dashboard .sidebar nav button.active {
   background: #242d3d;
   color: white;
 }
 
-.content {
+/*
+  IMPORTANTE:
+  Antes era somente .content.
+  Isso estava afetando o .content do cardápio.
+*/
+
+.dashboard > .content {
   width: calc(100% - 250px);
   margin-left: 250px;
   padding: 40px;
 }
 
-header {
+/*
+  Antes era apenas "header".
+  Agora somente o header dentro do dashboard recebe isso.
+*/
+
+.dashboard header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 25px;
 }
 
-.eyebrow {
+.dashboard .eyebrow {
   color: var(--primary);
   font-weight: 800;
   font-size: 12px;
   letter-spacing: 1.5px;
 }
 
-h1 {
+/*
+  Antes era h1 global.
+  Isso também podia alterar o cardápio.
+*/
+
+.dashboard h1 {
   font-size: 34px;
   margin-top: 7px;
 }
 
-.subtitle {
+.dashboard .subtitle {
   color: var(--muted);
   margin-top: 8px;
 }
 
-.newRestaurant {
+.dashboard .newRestaurant {
   background: var(--primary);
   color: white;
   border: 0;
@@ -113,50 +142,50 @@ h1 {
   font-weight: 800;
 }
 
-.stats {
+.dashboard .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin: 34px 0;
 }
 
-.stat {
+.dashboard .stat {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 17px;
   padding: 21px;
 }
 
-.stat span {
+.dashboard .stat span {
   display: block;
   color: var(--muted);
   font-size: 13px;
 }
 
-.stat strong {
+.dashboard .stat strong {
   display: block;
   font-size: 28px;
   margin-top: 7px;
 }
 
-.sectionTitle {
+.dashboard .sectionTitle {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin: 30px 0 18px;
 }
 
-.sectionTitle h2 {
+.dashboard .sectionTitle h2 {
   font-size: 21px;
 }
 
-.sectionTitle p {
+.dashboard .sectionTitle p {
   color: var(--muted);
   margin-top: 4px;
   font-size: 14px;
 }
 
-.sectionTitle input {
+.dashboard .sectionTitle input {
   width: 260px;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -165,21 +194,21 @@ h1 {
   background: white;
 }
 
-.restaurantGrid {
+.dashboard .restaurantGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
-.restaurantCard,
-.createCard {
+.dashboard .restaurantCard,
+.dashboard .createCard {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 18px;
   overflow: hidden;
 }
 
-.restaurantCover {
+.dashboard .restaurantCover {
   height: 130px;
   position: relative;
   display: grid;
@@ -187,11 +216,11 @@ h1 {
   background: linear-gradient(135deg, #251b1b, #6c2929);
 }
 
-.restaurantIcon {
+.dashboard .restaurantIcon {
   font-size: 48px;
 }
 
-.badge {
+.dashboard .badge {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -203,58 +232,58 @@ h1 {
   font-weight: 800;
 }
 
-.restaurantBody {
+.dashboard .restaurantBody {
   padding: 18px;
 }
 
-.restaurantBody h3 {
+.dashboard .restaurantBody h3 {
   font-size: 19px;
 }
 
-.restaurantBody > p {
+.dashboard .restaurantBody > p {
   color: var(--muted);
   font-size: 13px;
   margin-top: 5px;
 }
 
-.miniStats {
+.dashboard .miniStats {
   display: flex;
   gap: 28px;
   margin: 20px 0;
 }
 
-.miniStats span {
+.dashboard .miniStats span {
   display: flex;
   flex-direction: column;
   color: var(--muted);
   font-size: 11px;
 }
 
-.miniStats strong {
+.dashboard .miniStats strong {
   color: var(--dark);
   font-size: 17px;
 }
 
-.actions {
+.dashboard .actions {
   display: flex;
   gap: 8px;
 }
 
-.actions button {
+.dashboard .actions button {
   padding: 9px 12px;
   border-radius: 9px;
   border: 1px solid var(--border);
   background: white;
 }
 
-.actions .edit {
+.dashboard .actions .edit {
   flex: 1;
   background: var(--primary);
   color: white;
   border-color: var(--primary);
 }
 
-.createCard {
+.dashboard .createCard {
   min-height: 290px;
   border-style: dashed;
   display: flex;
@@ -264,7 +293,7 @@ h1 {
   color: var(--muted);
 }
 
-.createCard span {
+.dashboard .createCard span {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -276,84 +305,103 @@ h1 {
   margin-bottom: 12px;
 }
 
-.createCard strong {
+.dashboard .createCard strong {
   color: var(--dark);
   font-size: 16px;
 }
 
-.createCard small {
+.dashboard .createCard small {
   margin-top: 5px;
 }
 
+/* =========================================================
+   DASHBOARD - CELULAR
+========================================================= */
+
 @media (max-width: 800px) {
-  .sidebar {
+  .dashboard .sidebar {
     width: 72px;
     padding: 25px 10px;
   }
 
-  .logo {
+  .dashboard .logo {
     font-size: 0;
     padding: 0 0 25px;
     text-align: center;
   }
 
-  .logo::after {
+  .dashboard .logo::after {
     content: "M";
     font-size: 25px;
     font-weight: 900;
     color: #8b7fff;
   }
 
-  .sidebar nav button {
+  .dashboard .sidebar nav button {
     font-size: 0;
     text-align: center;
   }
 
-  .sidebar nav button::first-letter {
+  .dashboard .sidebar nav button::first-letter {
     font-size: 20px;
   }
 
-  .content {
+  /*
+    Essa era a regra que estava destruindo o cardápio no celular.
+
+    Antes:
+    .content {
+      width: calc(100% - 72px);
+      margin-left: 72px;
+    }
+
+    Agora ela só funciona dentro do dashboard.
+  */
+
+  .dashboard > .content {
     width: calc(100% - 72px);
     margin-left: 72px;
     padding: 22px 15px;
   }
 
-  header {
+  .dashboard header {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  h1 {
+  .dashboard h1 {
     font-size: 27px;
   }
 
-  .newRestaurant {
+  .dashboard .newRestaurant {
     width: 100%;
   }
 
-  .stats {
+  .dashboard .stats {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .sectionTitle {
+  .dashboard .sectionTitle {
     align-items: stretch;
     flex-direction: column;
     gap: 14px;
   }
 
-  .sectionTitle input {
+  .dashboard .sectionTitle input {
     width: 100%;
   }
 
-  .restaurantGrid {
-    
+  .dashboard .restaurantGrid {
     grid-template-columns: 1fr;
   }
-} 
-/* ===== MODAL NOVO RESTAURANTE ===== */
+}
 
-.modalBackdrop {
+/* =========================================================
+   MODAL NOVO RESTAURANTE
+   Também isolado dentro do dashboard.
+========================================================= */
+
+.dashboard .modalBackdrop {
   position: fixed;
   inset: 0;
   background: rgba(17, 24, 39, 0.65);
@@ -365,7 +413,7 @@ h1 {
   z-index: 9999;
 }
 
-.modal {
+.dashboard .modal {
   width: 100%;
   max-width: 480px;
   background: #ffffff;
@@ -374,19 +422,19 @@ h1 {
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
 }
 
-.modalHeader {
+.dashboard .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 25px;
 }
 
-.modalHeader h2 {
+.dashboard .modalHeader h2 {
   margin-top: 5px;
   font-size: 25px;
 }
 
-.closeModal {
+.dashboard .closeModal {
   border: 0;
   background: #f3f4f6;
   width: 38px;
@@ -395,14 +443,14 @@ h1 {
   font-size: 25px;
 }
 
-.modal label {
+.dashboard .modal label {
   display: block;
   font-weight: 700;
   font-size: 14px;
   margin-top: 18px;
 }
 
-.modal label input {
+.dashboard .modal label input {
   width: 100%;
   margin-top: 8px;
   padding: 14px;
@@ -411,25 +459,25 @@ h1 {
   outline: none;
 }
 
-.modal label input:focus {
+.dashboard .modal label input:focus {
   border-color: #6d5dfc;
 }
 
-.formHint {
+.dashboard .formHint {
   color: #6b7280;
   font-size: 13px;
   line-height: 1.5;
   margin-top: 18px;
 }
 
-.modalActions {
+.dashboard .modalActions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 25px;
 }
 
-.modalActions button {
+.dashboard .modalActions button {
   padding: 12px 17px;
   border-radius: 11px;
   border: 1px solid #e5e7eb;
@@ -437,8 +485,84 @@ h1 {
   font-weight: 700;
 }
 
-.modalActions .saveRestaurant {
+.dashboard .modalActions .saveRestaurant {
   background: #6d5dfc;
   border-color: #6d5dfc;
   color: white;
+}
+
+/* =========================================================
+   PROTEÇÃO DO CARDÁPIO PÚBLICO
+   Impede regras do painel de deslocarem a página pública.
+========================================================= */
+
+.page {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+.page .menu {
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/*
+  O .content do cardápio NÃO pode herdar
+  margem lateral do dashboard.
+*/
+
+.page .content {
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+}
+
+/*
+  A logo pública é controlada pelo próprio
+  app/cardapio/[slug]/page.js.
+*/
+
+.page .logo {
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+  O header público também é controlado
+  pelo próprio page.js.
+*/
+
+.page header {
+  width: 100%;
+  max-width: 100%;
+}
+
+/*
+  Evita imagens aumentarem a largura
+  da página no celular.
+*/
+
+.page img {
+  max-width: 100%;
+}
+
+/* =========================================================
+   SEGURANÇA PARA TELAS PEQUENAS
+========================================================= */
+
+@media (max-width: 600px) {
+  .page,
+  .page .menu,
+  .page .content {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
 }
