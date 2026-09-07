@@ -2371,11 +2371,24 @@ export default function EditorRestaurante() {
             </small>
           </button>
 
-          <EditorCard
-            icon="👁️"
-            title="Visualizar cardápio"
-            text="Veja o cardápio como o cliente."
-          />
+          <button
+  style={styles.card}
+  onClick={() => {
+    window.location.href = `/cardapio/${restaurante.slug}`;
+  }}
+>
+  <span style={styles.icon}>
+    👁️
+  </span>
+
+  <strong style={styles.cardTitle}>
+    Visualizar cardápio
+  </strong>
+
+  <small style={styles.cardText}>
+    Veja o cardápio como o cliente.
+  </small>
+</button>
         </section>
       </section>
     </main>
