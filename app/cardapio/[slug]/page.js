@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState
-} from 'react';
-
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -52,9 +46,7 @@ export default function CardapioPublico() {
           .in('status', ['demo', 'active'])
           .maybeSingle();
 
-        if (restaurantError) {
-          throw restaurantError;
-        }
+        if (restaurantError) throw restaurantError;
 
         if (!restaurantData) {
           setRestaurante(null);
@@ -76,9 +68,7 @@ export default function CardapioPublico() {
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: true });
 
-        if (categoryError) {
-          throw categoryError;
-        }
+        if (categoryError) throw categoryError;
 
         const {
           data: productData,
@@ -91,15 +81,10 @@ export default function CardapioPublico() {
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: true });
 
-        if (productError) {
-          throw productError;
-        }
+        if (productError) throw productError;
 
         const listaProdutos = productData || [];
-
-        const idsProdutos = listaProdutos.map(
-          (produto) => produto.id
-        );
+        const idsProdutos = listaProdutos.map((produto) => produto.id);
 
         let groupData = [];
         let addonData = [];
@@ -114,37 +99,25 @@ export default function CardapioPublico() {
             .in('product_id', idsProdutos)
             .order('sort_order', { ascending: true });
 
-          if (groupError) {
-            console.error(
-              'Erro ao carregar grupos:',
-              groupError
-            );
-          } else {
+          if (!groupError) {
             groupData = grupos || [];
-          }
 
-          const idsGrupos = groupData.map(
-            (grupo) => grupo.id
-          );
+            const idsGrupos = groupData.map((grupo) => grupo.id);
 
-          if (idsGrupos.length > 0) {
-            const {
-              data: itens,
-              error: addonError
-            } = await supabase
-              .from('addons')
-              .select('*')
-              .in('group_id', idsGrupos)
-              .eq('active', true)
-              .order('sort_order', { ascending: true });
+            if (idsGrupos.length > 0) {
+              const {
+                data: itens,
+                error: addonError
+              } = await supabase
+                .from('addons')
+                .select('*')
+                .in('group_id', idsGrupos)
+                .eq('active', true)
+                .order('sort_order', { ascending: true });
 
-            if (addonError) {
-              console.error(
-                'Erro ao carregar adicionais:',
-                addonError
-              );
-            } else {
-              addonData = itens || [];
+              if (!addonError) {
+                addonData = itens || [];
+              }
             }
           }
         }
@@ -175,53 +148,34 @@ export default function CardapioPublico() {
   }, [carregarCardapio]);
 
   useEffect(() => {
-    function atualizarAoVoltar() {
+    function atualizar() {
       if (document.visibilityState === 'visible') {
         carregarCardapio(false);
       }
     }
 
-    function atualizarNoFoco() {
+    function atualizarFoco() {
       carregarCardapio(false);
     }
 
-    document.addEventListener(
-      'visibilitychange',
-      atualizarAoVoltar
-    );
-
-    window.addEventListener(
-      'focus',
-      atualizarNoFoco
-    );
+    document.addEventListener('visibilitychange', atualizar);
+    window.addEventListener('focus', atualizarFoco);
 
     return () => {
-      document.removeEventListener(
-        'visibilitychange',
-        atualizarAoVoltar
-      );
-
-      window.removeEventListener(
-        'focus',
-        atualizarNoFoco
-      );
+      document.removeEventListener('visibilitychange', atualizar);
+      window.removeEventListener('focus', atualizarFoco);
     };
   }, [carregarCardapio]);
 
   const produtosSemCategoria = useMemo(() => {
-    return produtos.filter(
-      (produto) => !produto.category_id
-    );
+    return produtos.filter((produto) => !produto.category_id);
   }, [produtos]);
 
   function dinheiro(valor) {
-    return Number(valor || 0).toLocaleString(
-      'pt-BR',
-      {
-        style: 'currency',
-        currency: 'BRL'
-      }
-    );
+    return Number(valor || 0).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
   }
 
   function scrollCategoria(id) {
@@ -266,23 +220,19 @@ export default function CardapioPublico() {
 
   function adicionalSelecionado(grupoId, adicionalId) {
     const lista = selecionados[grupoId] || [];
-
     return lista.includes(adicionalId);
   }
 
   function alternarAdicional(grupo, adicional) {
     setSelecionados((atual) => {
       const listaAtual = atual[grupo.id] || [];
-
-      const existe = listaAtual.includes(
-        adicional.id
-      );
+      const existe = listaAtual.includes(adicional.id);
 
       if (existe) {
         return {
           ...atual,
           [grupo.id]: listaAtual.filter(
-            (itemId) => itemId !== adicional.id
+            (id) => id !== adicional.id
           )
         };
       }
@@ -305,10 +255,7 @@ export default function CardapioPublico() {
 
       return {
         ...atual,
-        [grupo.id]: [
-          ...listaAtual,
-          adicional.id
-        ]
+        [grupo.id]: [...listaAtual, adicional.id]
       };
     });
   }
@@ -316,9 +263,7 @@ export default function CardapioPublico() {
   function confirmarProduto() {
     if (!produtoAberto) return;
 
-    const grupos = gruposDoProduto(
-      produtoAberto.id
-    );
+    const grupos = gruposDoProduto(produtoAberto.id);
 
     const pendente = grupos.find((grupo) => {
       if (!grupo.required) return false;
@@ -335,10 +280,7 @@ export default function CardapioPublico() {
     });
 
     if (pendente) {
-      alert(
-        `Escolha uma opção em "${pendente.name}".`
-      );
-
+      alert(`Escolha uma opção em "${pendente.name}".`);
       return;
     }
 
@@ -352,9 +294,7 @@ export default function CardapioPublico() {
   const totalModal = useMemo(() => {
     if (!produtoAberto) return 0;
 
-    let total = Number(
-      produtoAberto.price || 0
-    );
+    let total = Number(produtoAberto.price || 0);
 
     Object.values(selecionados)
       .flat()
@@ -364,50 +304,40 @@ export default function CardapioPublico() {
         );
 
         if (adicional) {
-          total += Number(
-            adicional.price || 0
-          );
+          total += Number(adicional.price || 0);
         }
       });
 
     return total;
-  }, [
-    produtoAberto,
-    selecionados,
-    adicionais
-  ]);
+  }, [produtoAberto, selecionados, adicionais]);
 
   if (carregando) {
     return (
       <main className="loading">
-        <div className="loader">🍽️</div>
-
-        <strong>
-          Preparando o cardápio...
-        </strong>
+        <div className="plate">🍽️</div>
+        <strong>Preparando o cardápio...</strong>
 
         <style jsx>{`
           .loading {
             min-height: 100vh;
-            background: #05070d;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            display: grid;
+            place-content: center;
+            justify-items: center;
             gap: 16px;
+            background: #07080c;
+            color: white;
             font-family: Arial, sans-serif;
           }
 
-          .loader {
+          .plate {
             font-size: 48px;
             animation: pulse 1.5s infinite;
           }
 
           @keyframes pulse {
             50% {
-              transform: scale(1.12);
-              opacity: 0.6;
+              transform: scale(1.1);
+              opacity: 0.65;
             }
           }
         `}</style>
@@ -419,18 +349,9 @@ export default function CardapioPublico() {
     return (
       <main className="notFound">
         <div>
-          <div className="notFoundIcon">
-            🍽️
-          </div>
-
-          <h1>
-            Cardápio não encontrado
-          </h1>
-
-          <p>
-            Este restaurante não está disponível.
-          </p>
-
+          <div>🍽️</div>
+          <h1>Cardápio não encontrado</h1>
+          <p>Este restaurante não está disponível.</p>
           {erro && <small>{erro}</small>}
         </div>
 
@@ -441,17 +362,17 @@ export default function CardapioPublico() {
             place-items: center;
             padding: 30px;
             text-align: center;
-            background: #05070d;
+            background: #07080c;
             color: white;
             font-family: Arial, sans-serif;
           }
 
-          .notFoundIcon {
-            font-size: 52px;
+          .notFound > div > div {
+            font-size: 50px;
           }
 
           small {
-            color: #ff7777;
+            color: #ff7373;
           }
         `}</style>
       </main>
@@ -459,10 +380,10 @@ export default function CardapioPublico() {
   }
 
   const primaria =
-    restaurante.primary_color || '#2455ff';
+    restaurante.primary_color || '#123cff';
 
   const secundaria =
-    restaurante.secondary_color || '#111827';
+    restaurante.secondary_color || '#050816';
 
   const logoZoom = Number(
     restaurante.logo_zoom ?? 1
@@ -491,250 +412,160 @@ export default function CardapioPublico() {
       <div className="smoke smoke2" />
 
       <div className="menu">
-
-        {/* TOPO */}
-
         <header className="hero">
+          {restaurante.logo_url ? (
+            <div className="logoBox">
+              <div className="logoGlow" />
 
-          <div className="heroDecoration" />
-
-          <div className="heroBrand">
-
-            {restaurante.logo_url ? (
-              <div className="logoBox">
-                <img
-                  src={restaurante.logo_url}
-                  alt={`Logo ${restaurante.name}`}
-                  className="logo"
-                  style={{
-                    left: `${logoPositionX}%`,
-                    top: `${logoPositionY}%`,
-                    transform: `translate(-50%, -50%) scale(${logoZoom})`
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="logoFallback">
-                🍽️
-              </div>
-            )}
-
-            <div className="heroTitle">
-
-              <div className="brandLine">
-                <span />
-                <small>RESTAURANTE</small>
-                <span />
-              </div>
-
-              <h1>
-                {restaurante.name}
-              </h1>
-
-              <p>
-                SABOR EM CADA PEDIDO
-              </p>
-
+              <img
+                src={restaurante.logo_url}
+                alt={`Logo ${restaurante.name}`}
+                className="logo"
+                style={{
+                  left: `${logoPositionX}%`,
+                  top: `${logoPositionY}%`,
+                  transform: `translate(-50%, -50%) scale(${logoZoom})`
+                }}
+              />
             </div>
+          ) : (
+            <div className="logoFallback">🍽️</div>
+          )}
 
+          <div className="heroLabel">
+            <span />
+            RESTAURANTE
+            <span />
           </div>
 
-        </header>
+          <h1>{restaurante.name}</h1>
 
-        {/* CATEGORIAS */}
+          <div className="slogan">
+            SABOR EM CADA PEDIDO
+          </div>
+        </header>
 
         {categorias.length > 0 && (
           <nav className="categoryNav">
-
-            {categorias.map(
-              (categoria) => (
-                <button
-                  key={categoria.id}
-                  type="button"
-                  onClick={() =>
-                    scrollCategoria(
-                      categoria.id
-                    )
-                  }
-                >
-                  {categoria.name}
-                </button>
-              )
-            )}
-
+            {categorias.map((categoria) => (
+              <button
+                key={categoria.id}
+                type="button"
+                onClick={() =>
+                  scrollCategoria(categoria.id)
+                }
+              >
+                {categoria.name}
+              </button>
+            ))}
           </nav>
         )}
 
-        {/* CONTEÚDO */}
+        {produtos.length === 0 ? (
+          <section className="empty">
+            <span>🍽️</span>
+            <h2>Nosso menu está sendo preparado</h2>
+            <p>Em breve teremos novidades por aqui.</p>
+          </section>
+        ) : (
+          <section className="content">
+            {categorias.map((categoria, index) => {
+              const itens = produtos.filter(
+                (produto) =>
+                  produto.category_id === categoria.id
+              );
 
-        <section className="content">
+              if (!itens.length) return null;
 
-          {produtos.length === 0 ? (
-            <div className="empty">
-              <div>🍽️</div>
-
-              <h2>
-                Nosso menu está sendo preparado
-              </h2>
-
-              <p>
-                Em breve teremos novidades.
-              </p>
-            </div>
-          ) : (
-            <>
-              {categorias.map(
-                (categoria, index) => {
-                  const itens =
-                    produtos.filter(
-                      (produto) =>
-                        produto.category_id ===
-                        categoria.id
-                    );
-
-                  if (!itens.length) {
-                    return null;
-                  }
-
-                  return (
-                    <Categoria
-                      key={categoria.id}
-                      categoria={categoria}
-                      produtos={itens}
-                      dinheiro={dinheiro}
-                      index={index}
-                      abrirProduto={abrirProduto}
-                    />
-                  );
-                }
-              )}
-
-              {produtosSemCategoria.length >
-                0 && (
+              return (
                 <Categoria
-                  categoria={{
-                    id: 'outros',
-                    name: 'Outros'
-                  }}
-                  produtos={
-                    produtosSemCategoria
-                  }
+                  key={categoria.id}
+                  categoria={categoria}
+                  produtos={itens}
                   dinheiro={dinheiro}
-                  index={categorias.length}
+                  index={index}
                   abrirProduto={abrirProduto}
                 />
-              )}
-            </>
-          )}
+              );
+            })}
 
-        </section>
-
-        {/* RODAPÉ */}
-
-        <footer className="restaurantFooter">
-
-          <div className="footerInfo">
-
-            {restaurante.address && (
-              <div className="footerItem">
-
-                <span className="footerIcon">
-                  📍
-                </span>
-
-                <div>
-                  <strong>
-                    {restaurante.address}
-                  </strong>
-
-                  <small>
-                    Endereço do restaurante
-                  </small>
-                </div>
-
-              </div>
+            {produtosSemCategoria.length > 0 && (
+              <Categoria
+                categoria={{
+                  id: 'outros',
+                  name: 'Outros'
+                }}
+                produtos={produtosSemCategoria}
+                dinheiro={dinheiro}
+                index={categorias.length}
+                abrirProduto={abrirProduto}
+              />
             )}
+          </section>
+        )}
 
-            <div className="footerItem">
-
-              <span className="footerIcon">
-                🛵
-              </span>
+        <section className="restaurantInfo">
+          {restaurante.address && (
+            <div className="infoItem">
+              <span className="infoIcon">📍</span>
 
               <div>
-                <strong>
-                  {Number(
-                    restaurante.delivery_fee || 0
-                  ) === 0
-                    ? 'Entrega grátis'
-                    : `Entrega ${dinheiro(
-                        restaurante.delivery_fee
-                      )}`}
-                </strong>
-
-                {Number(
-                  restaurante.minimum_order || 0
-                ) > 0 && (
-                  <small>
-                    Mínimo{' '}
-                    {dinheiro(
-                      restaurante.minimum_order
-                    )}
-                  </small>
-                )}
+                <small>ENDEREÇO</small>
+                <strong>{restaurante.address}</strong>
               </div>
-
             </div>
+          )}
 
-            {restaurante.whatsapp && (
-              <div className="footerItem">
-
-                <span className="footerIcon">
-                  📱
-                </span>
-
-                <div>
-                  <strong>
-                    {restaurante.whatsapp}
-                  </strong>
-
-                  <small>
-                    Faça seu pedido
-                  </small>
-                </div>
-
-              </div>
-            )}
-
-          </div>
-
-          <div className="footerBrand">
-
-            <span />
+          <div className="infoItem">
+            <span className="infoIcon">🛵</span>
 
             <div>
+              <small>ENTREGA</small>
               <strong>
-                {restaurante.name}
+                {Number(restaurante.delivery_fee || 0) === 0
+                  ? 'Entrega grátis'
+                  : dinheiro(restaurante.delivery_fee)}
               </strong>
-
-              <small>
-                CARDÁPIO DIGITAL
-              </small>
             </div>
-
-            <span />
-
           </div>
 
-          <p className="menuflow">
-            MenuFlow
-          </p>
+          {Number(restaurante.minimum_order || 0) > 0 && (
+            <div className="infoItem">
+              <span className="infoIcon">🛒</span>
 
+              <div>
+                <small>PEDIDO MÍNIMO</small>
+                <strong>
+                  {dinheiro(restaurante.minimum_order)}
+                </strong>
+              </div>
+            </div>
+          )}
+
+          {restaurante.whatsapp && (
+            <div className="infoItem">
+              <span className="infoIcon">☎️</span>
+
+              <div>
+                <small>CONTATO</small>
+                <strong>{restaurante.whatsapp}</strong>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <footer>
+          <div className="footerBrand">
+            <span />
+            <strong>{restaurante.name}</strong>
+            <span />
+          </div>
+
+          <small>
+            CARDÁPIO DIGITAL • MENUFLOW
+          </small>
         </footer>
-
       </div>
-
-      {/* MODAL */}
 
       {produtoAberto && (
         <div
@@ -743,93 +574,62 @@ export default function CardapioPublico() {
         >
           <div
             className="modal"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
+            onClick={(e) => e.stopPropagation()}
           >
-
             <div className="modalHandle" />
 
-            <div className="modalTop">
-
+            <div className="modalHeader">
               <div>
-                <span className="modalLabel">
-                  PERSONALIZE SEU PEDIDO
-                </span>
-
-                <h2>
-                  {produtoAberto.name}
-                </h2>
-
-                <strong className="modalPrice">
-                  {dinheiro(
-                    produtoAberto.price
-                  )}
+                <small>PERSONALIZE SEU PEDIDO</small>
+                <h2>{produtoAberto.name}</h2>
+                <strong>
+                  {dinheiro(produtoAberto.price)}
                 </strong>
               </div>
 
               <button
-                type="button"
                 className="close"
+                type="button"
                 onClick={fecharProduto}
               >
                 ×
               </button>
-
             </div>
 
             <div className="addonGroups">
+              {gruposDoProduto(produtoAberto.id).map(
+                (grupo) => {
+                  const itens =
+                    adicionaisDoGrupo(grupo.id);
 
-              {gruposDoProduto(
-                produtoAberto.id
-              ).map((grupo) => {
-                const itens =
-                  adicionaisDoGrupo(
-                    grupo.id
-                  );
+                  if (!itens.length) return null;
 
-                if (!itens.length) {
-                  return null;
-                }
+                  return (
+                    <section
+                      key={grupo.id}
+                      className="addonGroup"
+                    >
+                      <div className="addonTitle">
+                        <div>
+                          <h3>{grupo.name}</h3>
 
-                return (
-                  <section
-                    className="addonGroup"
-                    key={grupo.id}
-                  >
+                          <small>
+                            {grupo.required
+                              ? 'Obrigatório'
+                              : 'Opcional'}
+                            {' • '}
+                            Escolha até{' '}
+                            {grupo.max_select || 1}
+                          </small>
+                        </div>
 
-                    <div className="addonGroupHeader">
-
-                      <div>
-                        <h3>
-                          {grupo.name}
-                        </h3>
-
-                        <small>
-                          {grupo.required
-                            ? 'Obrigatório'
-                            : 'Opcional'}
-
-                          {' • '}
-
-                          Escolha até{' '}
-
-                          {grupo.max_select || 1}
-                        </small>
+                        {grupo.required && (
+                          <span>OBRIGATÓRIO</span>
+                        )}
                       </div>
 
-                      {grupo.required && (
-                        <span className="required">
-                          OBRIGATÓRIO
-                        </span>
-                      )}
-
-                    </div>
-
-                    <div className="addonList">
-
-                      {itens.map(
-                        (adicional) => {
+                      <div className="addonList">
+                        {itens.map((adicional) => {
                           const marcado =
                             adicionalSelecionado(
                               grupo.id,
@@ -838,9 +638,9 @@ export default function CardapioPublico() {
 
                           return (
                             <button
-                              type="button"
                               key={adicional.id}
-                              className={`addonItem ${
+                              type="button"
+                              className={`addon ${
                                 marcado
                                   ? 'selected'
                                   : ''
@@ -852,48 +652,38 @@ export default function CardapioPublico() {
                                 )
                               }
                             >
-
                               <div>
                                 <strong>
                                   {adicional.name}
                                 </strong>
 
-                                <span>
+                                <small>
                                   {Number(
-                                    adicional.price ||
-                                      0
+                                    adicional.price || 0
                                   ) === 0
                                     ? 'Sem acréscimo'
                                     : `+ ${dinheiro(
                                         adicional.price
                                       )}`}
-                                </span>
+                                </small>
                               </div>
 
                               <span className="check">
-                                {marcado
-                                  ? '✓'
-                                  : '+'}
+                                {marcado ? '✓' : '+'}
                               </span>
-
                             </button>
                           );
-                        }
-                      )}
-
-                    </div>
-
-                  </section>
-                );
-              })}
-
+                        })}
+                      </div>
+                    </section>
+                  );
+                }
+              )}
             </div>
 
             <div className="modalFooter">
-
-              <div className="total">
+              <div>
                 <small>TOTAL</small>
-
                 <strong>
                   {dinheiro(totalModal)}
                 </strong>
@@ -906,9 +696,7 @@ export default function CardapioPublico() {
               >
                 Adicionar ao pedido
               </button>
-
             </div>
-
           </div>
         </div>
       )}
@@ -918,13 +706,17 @@ export default function CardapioPublico() {
           box-sizing: border-box;
         }
 
-        html {
-          scroll-behavior: smooth;
-        }
-
+        html,
         body {
           margin: 0;
-          background: #05070d;
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+          background: #05060a;
+        }
+
+        html {
+          scroll-behavior: smooth;
         }
 
         button,
@@ -937,156 +729,95 @@ export default function CardapioPublico() {
 
       <style jsx>{`
         .page {
+          width: 100%;
           min-height: 100vh;
-
+          overflow-x: hidden;
           position: relative;
-
-          overflow: hidden;
-
-          color: #f7f7f7;
-
+          color: #f6f5f2;
+          background:
+            radial-gradient(
+              circle at 50% 5%,
+              color-mix(
+                in srgb,
+                var(--primary) 10%,
+                transparent
+              ),
+              transparent 28%
+            ),
+            linear-gradient(
+              180deg,
+              #070811 0%,
+              #060712 42%,
+              #08090d 100%
+            );
           font-family:
             Arial,
             Helvetica,
             sans-serif;
-
-          background:
-            radial-gradient(
-              circle at 50% -10%,
-              color-mix(
-                in srgb,
-                var(--primary) 12%,
-                transparent
-              ),
-              transparent 30%
-            ),
-            linear-gradient(
-              180deg,
-              #060811 0%,
-              #080a13 55%,
-              #05070b 100%
-            );
         }
 
         .menu {
-          position: relative;
-
-          z-index: 5;
-
           width: 100%;
-
-          max-width: 1180px;
-
-          min-height: 100vh;
-
+          max-width: 1100px;
           margin: 0 auto;
+          position: relative;
+          z-index: 5;
         }
 
         .backgroundGlow {
           position: fixed;
-
-          width: 400px;
-          height: 400px;
-
+          width: 320px;
+          height: 320px;
           border-radius: 50%;
-
-          filter: blur(120px);
-
-          pointer-events: none;
-
+          filter: blur(100px);
           opacity: 0.08;
+          pointer-events: none;
         }
 
         .glow1 {
-          left: -200px;
-          top: 30%;
-
-          background:
-            var(--primary);
+          top: 100px;
+          left: -180px;
+          background: var(--primary);
         }
 
         .glow2 {
-          right: -200px;
-          bottom: 10%;
-
-          background:
-            var(--primary);
+          right: -180px;
+          bottom: 100px;
+          background: var(--primary);
         }
-
-        /* FUMAÇA SUTIL */
 
         .smoke {
           position: fixed;
-
-          bottom: -280px;
-
-          width: 360px;
-          height: 360px;
-
+          bottom: -180px;
+          width: 250px;
+          height: 350px;
           border-radius: 50%;
-
           background:
             radial-gradient(
-              circle,
-              rgba(
-                255,
-                255,
-                255,
-                0.07
-              ),
-              rgba(
-                255,
-                255,
-                255,
-                0.02
-              ) 45%,
+              ellipse,
+              rgba(255, 255, 255, 0.055),
+              rgba(255, 255, 255, 0.018) 45%,
               transparent 72%
             );
-
-          filter: blur(38px);
-
-          pointer-events: none;
-
-          z-index: 1;
-
+          filter: blur(45px);
           opacity: 0;
-
-          will-change:
-            transform,
-            opacity;
+          pointer-events: none;
+          z-index: 1;
         }
 
         .smoke1 {
-          left: -120px;
-
-          animation:
-            smokeFloatOne
-            22s
-            linear
-            infinite;
+          left: -70px;
+          animation: smoke 18s linear infinite;
         }
 
         .smoke2 {
-          right: -130px;
-
-          animation:
-            smokeFloatTwo
-            27s
-            linear
-            infinite
-            7s;
+          right: -70px;
+          animation: smoke 22s linear infinite 7s;
         }
 
-        @keyframes smokeFloatOne {
+        @keyframes smoke {
           0% {
-            transform:
-              translate3d(
-                0,
-                0,
-                0
-              )
-              scale(0.8);
-
+            transform: translateY(150px) scale(0.7);
             opacity: 0;
           }
 
@@ -1095,309 +826,153 @@ export default function CardapioPublico() {
           }
 
           55% {
-            transform:
-              translate3d(
-                80px,
-                -65vh,
-                0
-              )
-              scale(1.35);
-
-            opacity: 0.15;
+            opacity: 0.13;
           }
 
           100% {
-            transform:
-              translate3d(
-                -20px,
-                -125vh,
-                0
-              )
-              scale(1.8);
-
+            transform: translateY(-120vh) scale(1.7);
             opacity: 0;
           }
         }
-
-        @keyframes smokeFloatTwo {
-          0% {
-            transform:
-              translate3d(
-                0,
-                0,
-                0
-              )
-              scale(0.7);
-
-            opacity: 0;
-          }
-
-          18% {
-            opacity: 0.2;
-          }
-
-          60% {
-            transform:
-              translate3d(
-                -90px,
-                -70vh,
-                0
-              )
-              scale(1.4);
-
-            opacity: 0.12;
-          }
-
-          100% {
-            transform:
-              translate3d(
-                20px,
-                -125vh,
-                0
-              )
-              scale(1.9);
-
-            opacity: 0;
-          }
-        }
-
-        /* CABEÇALHO */
 
         .hero {
-          min-height: 170px;
-
-          position: relative;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          padding: 25px 24px;
-
-          overflow: hidden;
-
-          border-bottom:
-            1px solid
-            rgba(
-              255,
-              255,
-              255,
-              0.12
-            );
-
-          background:
-            linear-gradient(
-              180deg,
-              rgba(
-                255,
-                255,
-                255,
-                0.025
-              ),
-              rgba(
-                0,
-                0,
-                0,
-                0.1
-              )
-            );
-        }
-
-        .heroDecoration {
-          position: absolute;
-
-          inset: 0;
-
-          background:
-            radial-gradient(
-              circle at 20% 20%,
-              color-mix(
-                in srgb,
-                var(--primary) 12%,
-                transparent
-              ),
-              transparent 30%
-            );
-
-          pointer-events: none;
-        }
-
-        .heroBrand {
-          position: relative;
-
-          z-index: 2;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          gap: 22px;
-
           width: 100%;
+          padding: 34px 20px 25px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
         }
 
         .logoBox,
         .logoFallback {
-          width: 105px;
-          height: 105px;
+          width: 112px;
+          height: 112px;
+          border-radius: 26px;
+          flex-shrink: 0;
+        }
 
-          flex:
-            0 0 105px;
-
-          border-radius: 22px;
-
+        .logoBox {
           position: relative;
-
           overflow: hidden;
-
+          background: #0d0e13;
           border:
             1px solid
             color-mix(
               in srgb,
               var(--primary) 60%,
-              #ffffff
+              #353535
             );
-
-          background: #0b0d13;
-
           box-shadow:
-            0 0 30px
-            color-mix(
-              in srgb,
-              var(--primary) 12%,
-              transparent
-            );
+            0 15px 40px rgba(0, 0, 0, 0.38),
+            0 0 25px
+              color-mix(
+                in srgb,
+                var(--primary) 12%,
+                transparent
+              );
+        }
+
+        .logoBox::after {
+          content: '';
+          position: absolute;
+          inset: 5px;
+          z-index: 5;
+          pointer-events: none;
+          border-radius: 21px;
+          border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .logoGlow {
+          position: absolute;
+          inset: 20%;
+          border-radius: 50%;
+          background: var(--primary);
+          filter: blur(35px);
+          opacity: 0.13;
         }
 
         .logo {
           position: absolute;
-
           width: 100%;
           height: 100%;
-
           object-fit: contain;
-
-          transform-origin:
-            center center;
-
+          transform-origin: center;
           user-select: none;
+          z-index: 2;
         }
 
         .logoFallback {
           display: grid;
           place-items: center;
-
-          font-size: 42px;
-        }
-
-        .heroTitle {
-          text-align: center;
-
-          min-width: 0;
-        }
-
-        .brandLine {
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          gap: 10px;
-
-          margin-bottom: 5px;
-        }
-
-        .brandLine span {
-          width: 55px;
-          height: 1px;
-
+          font-size: 40px;
           background:
-            var(--primary);
+            linear-gradient(
+              135deg,
+              var(--primary),
+              var(--secondary)
+            );
         }
 
-        .brandLine small {
-          color:
-            color-mix(
-              in srgb,
-              var(--primary) 75%,
-              white
-            );
-
-          letter-spacing: 3px;
-
+        .heroLabel {
+          margin-top: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          color: var(--primary);
           font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 4px;
+        }
+
+        .heroLabel span {
+          display: block;
+          width: 38px;
+          height: 2px;
+          background:
+            linear-gradient(
+              90deg,
+              transparent,
+              var(--primary)
+            );
+        }
+
+        .heroLabel span:last-child {
+          transform: rotate(180deg);
         }
 
         .hero h1 {
-          margin: 5px 0;
-
-          font-size:
-            clamp(
-              30px,
-              6vw,
-              52px
-            );
-
-          line-height: 1;
-
+          width: 100%;
+          margin: 7px 0 8px;
+          font-size: clamp(30px, 8vw, 48px);
+          line-height: 0.98;
+          letter-spacing: -1.5px;
           text-transform: uppercase;
-
-          letter-spacing: -1px;
+          overflow-wrap: anywhere;
         }
 
-        .heroTitle p {
-          margin: 9px 0 0;
-
+        .slogan {
+          color: #9b9ca3;
           font-size: 9px;
-
-          letter-spacing: 3px;
-
-          color: #b8b8b8;
+          letter-spacing: 4px;
+          font-weight: 700;
         }
-
-        /* NAVEGAÇÃO */
 
         .categoryNav {
-          position: sticky;
-
-          top: 0;
-
-          z-index: 100;
-
+          width: 100%;
           display: flex;
-
-          gap: 12px;
-
+          gap: 10px;
           overflow-x: auto;
-
-          padding: 14px 24px;
-
+          padding: 14px 16px;
+          border-top: 1px solid rgba(255, 255, 255, 0.07);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+          background: rgba(6, 7, 12, 0.9);
           scrollbar-width: none;
-
-          background:
-            rgba(
-              5,
-              7,
-              13,
-              0.9
-            );
-
-          border-bottom:
-            1px solid
-            rgba(
-              255,
-              255,
-              255,
-              0.08
-            );
-
-          backdrop-filter:
-            blur(18px);
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          backdrop-filter: blur(15px);
         }
 
         .categoryNav::-webkit-scrollbar {
@@ -1405,750 +980,395 @@ export default function CardapioPublico() {
         }
 
         .categoryNav button {
-          flex:
-            1 0 auto;
-
-          min-width: 125px;
-
-          padding: 11px 20px;
-
+          min-width: 145px;
+          flex: 1 0 auto;
+          height: 45px;
+          padding: 0 20px;
           border-radius: 100px;
-
-          border:
-            1px solid
-            rgba(
-              255,
-              255,
-              255,
-              0.18
-            );
-
-          background:
-            rgba(
-              255,
-              255,
-              255,
-              0.02
-            );
-
-          color: #f4f4f4;
-
-          text-transform: uppercase;
-
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: rgba(255, 255, 255, 0.02);
+          color: #f2f2f2;
           font-size: 11px;
-
           font-weight: 800;
-
+          text-transform: uppercase;
+          white-space: nowrap;
           cursor: pointer;
-
-          transition:
-            0.2s ease;
         }
 
         .categoryNav button:active {
+          border-color: var(--primary);
+          color: var(--primary);
           background:
             color-mix(
               in srgb,
-              var(--primary) 22%,
+              var(--primary) 10%,
               transparent
             );
-
-          border-color:
-            var(--primary);
-
-          box-shadow:
-            0 0 20px
-            color-mix(
-              in srgb,
-              var(--primary) 25%,
-              transparent
-            );
-
-          transform:
-            scale(0.96);
         }
-
-        /* CONTEÚDO */
 
         .content {
           width: 100%;
-
-          padding:
-            10px
-            24px
-            45px;
+          padding: 0 16px 30px;
         }
 
         .empty {
-          margin: 50px auto;
-
-          max-width: 700px;
-
-          padding: 50px 20px;
-
+          margin: 35px 16px;
+          padding: 45px 20px;
           text-align: center;
-
-          border:
-            1px solid
-            rgba(
-              255,
-              255,
-              255,
-              0.1
-            );
-
-          border-radius: 22px;
-
-          background:
-            rgba(
-              255,
-              255,
-              255,
-              0.025
-            );
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.025);
         }
 
-        .empty div {
-          font-size: 45px;
+        .empty span {
+          font-size: 40px;
         }
 
         .empty p {
-          color: #888;
+          color: #888a91;
         }
 
-        /* RODAPÉ */
-
-        .restaurantFooter {
-          padding:
-            25px
-            24px
-            30px;
-
+        .restaurantInfo {
+          margin-top: 10px;
+          padding: 24px 16px;
+          display: grid;
+          grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+          gap: 16px;
           border-top:
             1px solid
             color-mix(
               in srgb,
-              var(--primary) 40%,
+              var(--primary) 30%,
               #222
             );
-
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.22
-            );
+          border-bottom:
+            1px solid
+            rgba(255, 255, 255, 0.05);
+          background: rgba(0, 0, 0, 0.22);
         }
 
-        .footerInfo {
-          display: grid;
-
-          grid-template-columns:
-            repeat(
-              3,
-              minmax(0, 1fr)
-            );
-
-          gap: 20px;
-
-          max-width: 900px;
-
-          margin: 0 auto;
-        }
-
-        .footerItem {
+        .infoItem {
+          min-width: 0;
           display: flex;
-
           align-items: center;
+          gap: 11px;
+        }
 
-          gap: 12px;
+        .infoIcon {
+          font-size: 20px;
+        }
 
+        .infoItem div {
           min-width: 0;
         }
 
-        .footerIcon {
-          font-size: 25px;
+        .infoItem small {
+          display: block;
+          margin-bottom: 4px;
+          color: var(--primary);
+          font-size: 7px;
+          font-weight: 900;
+          letter-spacing: 1.3px;
         }
 
-        .footerItem div {
-          display: grid;
-
-          gap: 4px;
-
-          min-width: 0;
-        }
-
-        .footerItem strong {
-          font-size: 12px;
-
-          overflow: hidden;
-
-          text-overflow: ellipsis;
-        }
-
-        .footerItem small {
-          color: #888;
-
+        .infoItem strong {
+          display: block;
+          color: #d7d7d7;
           font-size: 10px;
+          line-height: 1.4;
+          overflow-wrap: anywhere;
+        }
+
+        footer {
+          padding: 24px 16px 35px;
+          text-align: center;
         }
 
         .footerBrand {
           display: flex;
-
           align-items: center;
-
           justify-content: center;
-
           gap: 12px;
-
-          margin-top: 28px;
-
-          text-align: center;
+          margin-bottom: 8px;
         }
 
-        .footerBrand > span {
-          width: 70px;
+        .footerBrand span {
+          width: 40px;
           height: 1px;
-
-          background:
-            var(--primary);
-        }
-
-        .footerBrand div {
-          display: grid;
-
-          gap: 3px;
+          background: var(--primary);
+          opacity: 0.6;
         }
 
         .footerBrand strong {
-          font-size: 12px;
-
+          font-size: 10px;
+          letter-spacing: 2px;
           text-transform: uppercase;
         }
 
-        .footerBrand small {
-          color: #777;
-
+        footer small {
+          color: #686970;
           font-size: 7px;
-
           letter-spacing: 2px;
         }
-
-        .menuflow {
-          margin:
-            15px
-            0
-            0;
-
-          text-align: center;
-
-          color: #505158;
-
-          font-size: 9px;
-
-          letter-spacing: 2px;
-        }
-
-        /* MODAL */
 
         .modalOverlay {
           position: fixed;
-
           inset: 0;
-
           z-index: 9999;
-
           display: flex;
-
-          align-items: flex-end;
-
           justify-content: center;
-
+          align-items: flex-end;
           padding: 20px;
-
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.78
-            );
-
-          backdrop-filter:
-            blur(8px);
+          background: rgba(0, 0, 0, 0.78);
+          backdrop-filter: blur(8px);
         }
 
         .modal {
           width: 100%;
-
           max-width: 620px;
-
-          max-height: 88vh;
-
+          max-height: 90vh;
           overflow-y: auto;
-
           padding: 24px;
-
           border-radius: 25px;
-
+          background: #111216;
           color: white;
-
-          background: #101219;
-
           border:
             1px solid
             color-mix(
               in srgb,
-              var(--primary) 35%,
+              var(--primary) 30%,
               #333
-            );
-
-          box-shadow:
-            0 -20px 70px
-            rgba(
-              0,
-              0,
-              0,
-              0.65
             );
         }
 
         .modalHandle {
           display: none;
-
           width: 45px;
           height: 4px;
-
-          margin:
-            0
-            auto
-            18px;
-
-          border-radius: 10px;
-
-          background: #3c3d42;
+          margin: 0 auto 18px;
+          border-radius: 20px;
+          background: #44464c;
         }
 
-        .modalTop {
+        .modalHeader {
           display: flex;
-
-          justify-content:
-            space-between;
-
-          align-items:
-            flex-start;
-
-          gap: 20px;
-
+          justify-content: space-between;
+          gap: 15px;
           padding-bottom: 20px;
-
-          border-bottom:
-            1px solid
-            rgba(
-              255,
-              255,
-              255,
-              0.08
-            );
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .modalLabel {
-          color:
-            var(--primary);
-
-          font-size: 9px;
-
+        .modalHeader small {
+          color: var(--primary);
+          font-size: 8px;
           font-weight: 900;
-
-          letter-spacing: 1.7px;
+          letter-spacing: 1.5px;
         }
 
-        .modalTop h2 {
+        .modalHeader h2 {
           margin: 7px 0;
-
-          font-size: 27px;
+          font-size: 25px;
         }
 
-        .modalPrice {
-          color:
-            var(--primary);
-
+        .modalHeader strong {
+          color: var(--primary);
           font-size: 19px;
         }
 
         .close {
           width: 38px;
           height: 38px;
-
-          flex:
-            0 0 38px;
-
+          flex: 0 0 38px;
           border: 0;
-
           border-radius: 50%;
-
-          background:
-            rgba(
-              255,
-              255,
-              255,
-              0.08
-            );
-
+          background: rgba(255, 255, 255, 0.08);
           color: white;
-
-          font-size: 25px;
-
-          cursor: pointer;
+          font-size: 24px;
         }
 
         .addonGroups {
           display: grid;
-
-          gap: 25px;
-
-          padding:
-            25px
-            0;
+          gap: 24px;
+          padding: 22px 0;
         }
 
-        .addonGroup {
-          display: grid;
-
-          gap: 14px;
-        }
-
-        .addonGroupHeader {
+        .addonTitle {
           display: flex;
-
-          justify-content:
-            space-between;
-
-          gap: 15px;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 12px;
         }
 
-        .addonGroup h3 {
+        .addonTitle h3 {
           margin: 0 0 4px;
-
-          font-size: 17px;
+          font-size: 16px;
         }
 
-        .addonGroup small {
-          color: #85878d;
+        .addonTitle small {
+          color: #888a90;
+          font-size: 10px;
         }
 
-        .required {
+        .addonTitle > span {
           height: fit-content;
-
-          color:
-            var(--primary);
-
-          border:
-            1px solid
-            var(--primary);
-
-          padding: 5px 8px;
-
-          border-radius: 100px;
-
+          padding: 5px 7px;
+          border: 1px solid var(--primary);
+          border-radius: 50px;
+          color: var(--primary);
           font-size: 7px;
-
           font-weight: 900;
         }
 
         .addonList {
           display: grid;
-
-          gap: 9px;
+          gap: 8px;
         }
 
-        .addonItem {
+        .addon {
           width: 100%;
-
+          min-height: 58px;
           display: flex;
-
           align-items: center;
-
-          justify-content:
-            space-between;
-
+          justify-content: space-between;
           gap: 15px;
-
-          padding: 14px;
-
+          padding: 12px 14px;
           text-align: left;
-
           color: white;
-
-          border-radius: 14px;
-
-          border:
-            1px solid
-            rgba(
-              255,
-              255,
-              255,
-              0.08
-            );
-
-          background:
-            rgba(
-              255,
-              255,
-              255,
-              0.025
-            );
-
-          cursor: pointer;
+          border-radius: 13px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.025);
         }
 
-        .addonItem.selected {
-          border-color:
-            var(--primary);
-
+        .addon.selected {
+          border-color: var(--primary);
           background:
             color-mix(
               in srgb,
-              var(--primary) 12%,
+              var(--primary) 10%,
               #111216
             );
         }
 
-        .addonItem div {
+        .addon > div {
           display: grid;
-
           gap: 4px;
         }
 
-        .addonItem strong {
-          font-size: 13px;
-        }
-
-        .addonItem span {
-          color: #8d8f95;
-
-          font-size: 11px;
+        .addon > div small {
+          color: #888a90;
         }
 
         .check {
           width: 28px;
           height: 28px;
-
-          flex:
-            0 0 28px;
-
+          flex: 0 0 28px;
           display: grid;
-
           place-items: center;
-
           border-radius: 50%;
-
-          background:
-            var(--primary) !important;
-
-          color:
-            white !important;
-
-          font-size:
-            16px !important;
-
+          background: var(--primary);
+          color: white;
           font-weight: 900;
         }
 
         .modalFooter {
           position: sticky;
-
           bottom: -24px;
-
-          margin:
-            0
-            -24px
-            -24px;
-
-          padding: 18px 24px;
-
+          margin: 0 -24px -24px;
+          padding: 16px 24px;
           display: flex;
-
           align-items: center;
-
-          justify-content:
-            space-between;
-
-          gap: 15px;
-
-          background:
-            rgba(
-              16,
-              18,
-              25,
-              0.97
-            );
-
-          border-top:
-            1px solid
-            rgba(
-              255,
-              255,
-              255,
-              0.08
-            );
+          justify-content: space-between;
+          gap: 12px;
+          background: rgba(17, 18, 22, 0.97);
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .total {
+        .modalFooter > div {
           display: grid;
-
           gap: 3px;
         }
 
-        .total small {
+        .modalFooter small {
           color: #777;
-
           font-size: 8px;
-
-          letter-spacing: 1.5px;
+          letter-spacing: 1px;
         }
 
-        .total strong {
-          color:
-            var(--primary);
-
-          font-size: 20px;
+        .modalFooter strong {
+          color: var(--primary);
+          font-size: 19px;
         }
 
         .confirm {
+          padding: 13px 16px;
           border: 0;
-
-          padding:
-            14px
-            18px;
-
           border-radius: 12px;
-
+          background: var(--primary);
           color: white;
-
-          background:
-            var(--primary);
-
           font-weight: 800;
-
-          cursor: pointer;
         }
 
-        /* CELULAR */
-
-        @media (max-width: 650px) {
-          .menu {
-            max-width: none;
-          }
-
+        @media (max-width: 600px) {
           .hero {
-            min-height: 145px;
-
-            padding:
-              18px
-              15px;
-          }
-
-          .heroBrand {
-            gap: 12px;
+            padding: 25px 16px 21px;
           }
 
           .logoBox,
           .logoFallback {
-            width: 76px;
-            height: 76px;
+            width: 96px;
+            height: 96px;
+            border-radius: 22px;
+          }
 
-            flex-basis: 76px;
-
+          .logoBox::after {
             border-radius: 17px;
           }
 
+          .heroLabel {
+            margin-top: 14px;
+            font-size: 8px;
+            letter-spacing: 3px;
+          }
+
+          .heroLabel span {
+            width: 30px;
+          }
+
           .hero h1 {
-            font-size: 28px;
-
-            line-height: 0.98;
+            margin-top: 7px;
+            font-size: clamp(28px, 9vw, 39px);
+            letter-spacing: -1.3px;
           }
 
-          .brandLine span {
-            width: 35px;
-          }
-
-          .brandLine small {
-            font-size: 7px;
-
-            letter-spacing: 2px;
-          }
-
-          .heroTitle p {
-            font-size: 7px;
-
-            letter-spacing: 2px;
+          .slogan {
+            font-size: 8px;
+            letter-spacing: 3px;
           }
 
           .categoryNav {
-            padding:
-              12px
-              14px;
-
-            gap: 9px;
+            padding: 12px;
+            gap: 8px;
           }
 
           .categoryNav button {
-            min-width: 120px;
-
-            padding:
-              10px
-              15px;
-
+            min-width: 130px;
+            height: 42px;
+            padding: 0 16px;
             font-size: 10px;
           }
 
           .content {
             padding:
-              4px
+              0
               12px
-              30px;
+              25px;
           }
 
-          .restaurantFooter {
-            padding:
-              22px
-              16px
-              26px;
-          }
-
-          .footerInfo {
+          .restaurantInfo {
+            padding: 20px 16px;
             grid-template-columns:
-              repeat(
-                3,
-                minmax(0, 1fr)
-              );
-
-            gap: 8px;
-          }
-
-          .footerItem {
-            align-items:
-              flex-start;
-
-            gap: 6px;
-          }
-
-          .footerIcon {
-            font-size: 17px;
-          }
-
-          .footerItem strong {
-            font-size: 9px;
-          }
-
-          .footerItem small {
-            font-size: 7px;
-          }
-
-          .footerBrand {
-            margin-top: 22px;
+              repeat(2, minmax(0, 1fr));
           }
 
           .modalOverlay {
@@ -2157,18 +1377,8 @@ export default function CardapioPublico() {
 
           .modal {
             max-height: 92vh;
-
-            padding:
-              15px
-              20px
-              20px;
-
-            border-radius:
-              25px
-              25px
-              0
-              0;
-
+            padding: 15px 18px 20px;
+            border-radius: 25px 25px 0 0;
             border-left: 0;
             border-right: 0;
             border-bottom: 0;
@@ -2178,28 +1388,16 @@ export default function CardapioPublico() {
             display: block;
           }
 
-          .modalTop h2 {
-            font-size: 22px;
-          }
-
           .modalFooter {
             bottom: -20px;
-
             margin:
               0
-              -20px
+              -18px
               -20px;
-
-            padding:
-              15px
-              20px;
+            padding: 15px 18px;
           }
 
           .confirm {
-            padding:
-              13px
-              14px;
-
             font-size: 11px;
           }
         }
@@ -2214,10 +1412,6 @@ export default function CardapioPublico() {
   );
 }
 
-/* ============================================================
-   CATEGORIA
-============================================================ */
-
 function Categoria({
   categoria,
   produtos,
@@ -2225,219 +1419,139 @@ function Categoria({
   index,
   abrirProduto
 }) {
+  const frases = [
+    'TRADIÇÃO EM SABOR',
+    'QUALIDADE EM CADA MORDIDA',
+    'SABOR EM CADA PEDIDO',
+    'REFRESQUE SEU DIA'
+  ];
+
   return (
     <section
       id={`categoria-${categoria.id}`}
       className="category"
-      style={{
-        animationDelay:
-          `${index * 0.08}s`
-      }}
     >
-
       <div className="categoryHeader">
-
         <div className="categoryTitle">
-
-          <span className="number">
-            {String(index + 1).padStart(
-              2,
-              '0'
-            )}
+          <span>
+            {String(index + 1).padStart(2, '0')}
           </span>
 
-          <h2>
-            {categoria.name}
-          </h2>
-
+          <h2>{categoria.name}</h2>
         </div>
 
         <div className="line" />
 
-        <span className="phrase">
-          SABOR
-          <br />
-          EM CADA PEDIDO
-        </span>
-
+        <small>
+          {frases[index % frases.length]}
+        </small>
       </div>
 
       <div className="products">
-
-        {produtos.map(
-          (produto, productIndex) => (
-            <Produto
-              key={produto.id}
-              produto={produto}
-              dinheiro={dinheiro}
-              index={productIndex}
-              abrirProduto={abrirProduto}
-            />
-          )
-        )}
-
+        {produtos.map((produto) => (
+          <Produto
+            key={produto.id}
+            produto={produto}
+            dinheiro={dinheiro}
+            abrirProduto={abrirProduto}
+          />
+        ))}
       </div>
 
       <style jsx>{`
         .category {
           width: 100%;
-
-          padding-top: 32px;
-
-          scroll-margin-top:
-            75px;
-
-          opacity: 0;
-
-          animation:
-            reveal
-            0.55s
-            ease
-            forwards;
-        }
-
-        @keyframes reveal {
-          from {
-            opacity: 0;
-
-            transform:
-              translateY(16px);
-          }
-
-          to {
-            opacity: 1;
-
-            transform:
-              translateY(0);
-          }
+          padding-top: 31px;
+          scroll-margin-top: 75px;
         }
 
         .categoryHeader {
           width: 100%;
-
           display: flex;
-
-          align-items:
-            flex-end;
-
-          gap: 15px;
-
-          padding:
-            0
-            5px
-            15px;
+          align-items: flex-end;
+          gap: 14px;
+          margin-bottom: 14px;
         }
 
         .categoryTitle {
-          flex-shrink: 0;
+          flex: 0 1 auto;
+          min-width: 0;
         }
 
-        .number {
+        .categoryTitle span {
           display: block;
-
           margin-bottom: 5px;
-
-          color:
-            var(--primary);
-
-          font-size: 10px;
-
+          color: var(--primary);
+          font-size: 9px;
           font-weight: 900;
-
           letter-spacing: 2px;
         }
 
         h2 {
           margin: 0;
-
-          color: #f5f5f5;
-
-          font-size:
-            clamp(
-              25px,
-              5vw,
-              37px
-            );
-
-          line-height: 0.95;
-
-          text-transform:
-            uppercase;
-
-          letter-spacing:
-            -1px;
+          color: #f6f5f1;
+          font-size: clamp(23px, 5vw, 31px);
+          line-height: 1;
+          letter-spacing: -0.7px;
+          text-transform: uppercase;
+          overflow-wrap: anywhere;
         }
 
         .line {
           flex: 1;
-
-          min-width: 20px;
-
+          min-width: 25px;
           height: 1px;
-
-          margin-bottom: 8px;
-
+          margin-bottom: 5px;
           background:
             linear-gradient(
               90deg,
               var(--primary),
               transparent
             );
+          opacity: 0.65;
         }
 
-        .phrase {
-          flex-shrink: 0;
-
+        .categoryHeader small {
+          max-width: 105px;
+          flex: 0 0 auto;
           margin-bottom: 1px;
-
           color:
             color-mix(
               in srgb,
-              var(--primary) 55%,
-              #ffdca2
+              var(--primary) 60%,
+              #ffd889
             );
-
           text-align: right;
-
-          font-size: 8px;
-
+          font-size: 7px;
           font-weight: 800;
-
           line-height: 1.4;
-
-          letter-spacing:
-            1.5px;
+          letter-spacing: 1.5px;
         }
 
         .products {
+          width: 100%;
           display: grid;
-
-          gap: 12px;
+          gap: 10px;
         }
 
-        @media (max-width: 650px) {
+        @media (max-width: 600px) {
           .category {
-            padding-top: 28px;
+            padding-top: 27px;
           }
 
           .categoryHeader {
             gap: 10px;
-
-            padding-bottom: 12px;
+            margin-bottom: 12px;
           }
 
           h2 {
-            font-size: 27px;
+            font-size: clamp(22px, 7vw, 30px);
           }
 
-          .phrase {
-            max-width: 85px;
-
-            font-size: 7px;
-          }
-
-          .products {
-            gap: 10px;
+          .categoryHeader small {
+            max-width: 82px;
+            font-size: 6px;
+            letter-spacing: 1px;
           }
         }
       `}</style>
@@ -2445,42 +1559,14 @@ function Categoria({
   );
 }
 
-/* ============================================================
-   PRODUTO
-============================================================ */
-
 function Produto({
   produto,
   dinheiro,
-  index,
   abrirProduto
 }) {
-  const [pressionado, setPressionado] =
-    useState(false);
-
-  function clicar() {
-    setPressionado(true);
-
-    setTimeout(() => {
-      setPressionado(false);
-    }, 220);
-
-    abrirProduto(produto);
-  }
-
   return (
-    <article
-      className={`product ${
-        pressionado ? 'pressed' : ''
-      }`}
-      style={{
-        animationDelay:
-          `${index * 0.06}s`
-      }}
-    >
-
+    <article className="product">
       <div className="imageSide">
-
         {produto.image_url ? (
           <img
             src={produto.image_url}
@@ -2488,506 +1574,292 @@ function Produto({
           />
         ) : (
           <div className="noImage">
-            🍽️
+            <span>🍽️</span>
           </div>
         )}
-
-        <div className="imageShade" />
 
         {produto.featured && (
           <span className="featured">
             ★ DESTAQUE
           </span>
         )}
-
       </div>
 
       <div className="productInfo">
-
         <div className="text">
-
-          <h3>
-            {produto.name}
-          </h3>
+          <h3>{produto.name}</h3>
 
           {produto.description && (
-            <p>
-              {produto.description}
-            </p>
+            <p>{produto.description}</p>
           )}
 
           <strong className="price">
-            {dinheiro(
-              produto.price
-            )}
+            {dinheiro(produto.price)}
           </strong>
-
         </div>
 
         <button
           type="button"
           className="add"
-          onClick={clicar}
+          aria-label={`Adicionar ${produto.name}`}
+          onClick={() => abrirProduto(produto)}
         >
-          <span>
+          <span className="addText">
             Adicionar
           </span>
 
-          <span className="plus">
-            +
-          </span>
+          <span className="plus">+</span>
         </button>
-
       </div>
-
-      <div className="edgeGlow" />
 
       <style jsx>{`
         .product {
           width: 100%;
-
-          min-height: 150px;
-
+          min-width: 0;
+          height: 142px;
           display: grid;
-
-          grid-template-columns:
-            minmax(
-              250px,
-              37%
-            )
-            1fr;
-
-          position: relative;
-
+          grid-template-columns: 36% 64%;
           overflow: hidden;
-
-          border-radius: 20px;
-
+          position: relative;
+          border-radius: 18px;
           border:
             1px solid
             color-mix(
               in srgb,
-              var(--primary) 32%,
-              #676767
+              var(--primary) 38%,
+              #3a3a3a
             );
-
           background:
             linear-gradient(
-              120deg,
-              #15171c,
-              #0d1017
+              110deg,
+              #15161a,
+              #101116
             );
-
           box-shadow:
-            0 14px 40px
-              rgba(
-                0,
-                0,
-                0,
-                0.25
+            0 10px 30px rgba(0, 0, 0, 0.28),
+            inset 0 -1px 0
+              color-mix(
+                in srgb,
+                var(--primary) 20%,
+                transparent
               );
-
-          opacity: 0;
-
-          animation:
-            productReveal
-            0.5s
-            ease
-            forwards;
-
-          transition:
-            transform
-            0.2s ease;
-        }
-
-        @keyframes productReveal {
-          from {
-            opacity: 0;
-
-            transform:
-              translateY(14px);
-          }
-
-          to {
-            opacity: 1;
-
-            transform:
-              translateY(0);
-          }
-        }
-
-        .product.pressed {
-          transform:
-            scale(0.99);
         }
 
         .imageSide {
+          min-width: 0;
+          height: 100%;
           position: relative;
-
-          min-height: 150px;
-
           overflow: hidden;
-
-          background: #111;
+          background: #111217;
         }
 
         .imageSide img {
-          position: absolute;
-
-          inset: 0;
-
           width: 100%;
           height: 100%;
-
-          object-fit: cover;
-
           display: block;
+          object-fit: cover;
         }
 
         .noImage {
           width: 100%;
           height: 100%;
-
-          min-height: 150px;
-
           display: grid;
-
           place-items: center;
-
-          font-size: 38px;
-
           background:
             radial-gradient(
               circle,
-              #1c2029,
-              #0d0f14
-            );
+              rgba(255, 255, 255, 0.055),
+              transparent 65%
+            ),
+            #111217;
         }
 
-        .imageShade {
-          position: absolute;
-
-          inset: 0;
-
-          background:
-            linear-gradient(
-              90deg,
-              transparent 65%,
-              rgba(
-                13,
-                16,
-                23,
-                0.55
-              )
-            );
-
-          pointer-events: none;
+        .noImage span {
+          font-size: 30px;
+          opacity: 0.65;
         }
 
         .featured {
           position: absolute;
-
-          left: 10px;
-          top: 10px;
-
-          z-index: 3;
-
-          padding:
-            5px
-            8px;
-
-          border-radius: 100px;
-
-          color:
-            var(--primary);
-
-          border:
-            1px solid
-            var(--primary);
-
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.7
-            );
-
-          font-size: 7px;
-
+          top: 8px;
+          left: 8px;
+          padding: 5px 7px;
+          border-radius: 50px;
+          color: var(--primary);
+          background: rgba(0, 0, 0, 0.7);
+          border: 1px solid var(--primary);
+          font-size: 6px;
           font-weight: 900;
-
-          letter-spacing: 1px;
+          letter-spacing: 0.6px;
         }
 
         .productInfo {
           min-width: 0;
-
+          height: 100%;
+          padding: 15px 14px 14px 17px;
           display: flex;
-
           align-items: center;
-
-          justify-content:
-            space-between;
-
-          gap: 20px;
-
-          padding:
-            20px
-            20px;
+          justify-content: space-between;
+          gap: 12px;
         }
 
         .text {
           min-width: 0;
-
           flex: 1;
         }
 
         h3 {
           margin: 0;
-
-          color: #f7f7f7;
-
-          font-size: 20px;
-
-          line-height: 1.15;
+          color: #f7f6f3;
+          font-size: 17px;
+          line-height: 1.1;
+          overflow-wrap: anywhere;
         }
 
         p {
-          margin:
-            6px
-            0
-            15px;
-
-          color: #a4a6ab;
-
-          font-size: 12px;
-
-          line-height: 1.4;
+          margin: 6px 0 10px;
+          color: #96979d;
+          font-size: 10px;
+          line-height: 1.35;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
 
         .price {
           display: block;
-
-          color:
-            var(--primary);
-
-          font-size: 21px;
-
+          color: var(--primary);
+          font-size: 18px;
           line-height: 1;
+          white-space: nowrap;
         }
 
         .add {
-          flex:
-            0 0 auto;
-
-          min-width: 145px;
-
+          flex: 0 0 auto;
+          min-width: 116px;
+          height: 45px;
+          padding: 5px 7px 5px 14px;
           display: flex;
-
           align-items: center;
-
-          justify-content:
-            space-between;
-
-          gap: 18px;
-
-          padding:
-            10px
-            10px
-            10px
-            17px;
-
-          color: white;
-
+          justify-content: space-between;
+          gap: 12px;
           border-radius: 100px;
-
           border:
             1px solid
-            var(--primary);
-
+            color-mix(
+              in srgb,
+              var(--primary) 75%,
+              transparent
+            );
           background:
             color-mix(
               in srgb,
-              var(--primary) 10%,
-              transparent
+              var(--primary) 9%,
+              #101116
             );
-
-          box-shadow:
-            0 0 20px
-            color-mix(
-              in srgb,
-              var(--primary) 8%,
-              transparent
-            );
-
-          font-size: 11px;
-
+          color: white;
+          font-size: 10px;
           font-weight: 800;
-
           cursor: pointer;
+          box-shadow:
+            0 0 15px
+              color-mix(
+                in srgb,
+                var(--primary) 8%,
+                transparent
+              );
         }
 
         .plus {
           width: 31px;
           height: 31px;
-
+          flex: 0 0 31px;
           display: grid;
-
           place-items: center;
-
           border-radius: 50%;
-
+          background: var(--primary);
           color: white;
-
-          background:
-            var(--primary);
-
+          font-size: 21px;
+          font-weight: 900;
           box-shadow:
-            0 0 14px
-            color-mix(
-              in srgb,
-              var(--primary) 55%,
-              transparent
-            );
-
-          font-size: 22px;
-
-          line-height: 1;
+            0 0 16px
+              color-mix(
+                in srgb,
+                var(--primary) 35%,
+                transparent
+              );
         }
 
-        .edgeGlow {
-          position: absolute;
-
-          right: 0;
-          bottom: 0;
-
-          width: 45%;
-          height: 1px;
-
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              var(--primary)
-            );
-
-          opacity: 0.55;
-
-          pointer-events: none;
-        }
-
-        /* CELULAR */
-
-        @media (max-width: 650px) {
+        @media (max-width: 600px) {
           .product {
-            min-height: 132px;
-
+            height: 124px;
             grid-template-columns:
-              37%
-              63%;
-
-            border-radius: 17px;
-          }
-
-          .imageSide,
-          .noImage {
-            min-height: 132px;
+              minmax(104px, 34%)
+              minmax(0, 66%);
+            border-radius: 15px;
           }
 
           .productInfo {
+            padding: 11px 10px 11px 13px;
             gap: 7px;
-
-            padding:
-              13px
-              10px
-              13px
-              12px;
           }
 
           h3 {
-            font-size: 15px;
+            font-size: 14px;
           }
 
           p {
-            margin:
-              4px
-              0
-              10px;
-
+            margin: 4px 0 8px;
             font-size: 9px;
-
-            line-height: 1.3;
-
-            display:
-              -webkit-box;
-
             -webkit-line-clamp: 2;
-
-            -webkit-box-orient:
-              vertical;
-
-            overflow: hidden;
           }
 
           .price {
-            font-size: 18px;
+            font-size: 16px;
           }
 
           .add {
-            min-width: 0;
-
-            padding:
-              7px;
-
-            border-radius: 100px;
-
-            gap: 0;
+            min-width: 38px;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
           }
 
-          .add > span:first-child {
+          .addText {
             display: none;
           }
 
           .plus {
-            width: 29px;
-            height: 29px;
-
-            font-size: 21px;
+            width: 30px;
+            height: 30px;
+            flex-basis: 30px;
+            font-size: 20px;
           }
         }
 
-        @media (min-width: 420px) and (max-width: 650px) {
-          .productInfo {
-            padding:
-              14px
-              12px
-              14px
-              15px;
+        @media (min-width: 601px) {
+          .product {
+            height: 160px;
+            grid-template-columns: 38% 62%;
           }
 
-          .add {
-            min-width: 108px;
-
-            padding:
-              7px
-              7px
-              7px
-              13px;
-
-            gap: 9px;
+          h3 {
+            font-size: 20px;
           }
 
-          .add > span:first-child {
-            display: inline;
+          p {
+            font-size: 11px;
           }
 
-          .plus {
-            width: 28px;
-            height: 28px;
+          .price {
+            font-size: 20px;
           }
         }
       `}</style>
     </article>
   );
-          }
+                                    }
