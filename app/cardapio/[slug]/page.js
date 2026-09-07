@@ -90,10 +90,7 @@ export default function CardapioPublico() {
         }
 
         const listaProdutos = productData || [];
-
-        const idsProdutos = listaProdutos.map(
-          (produto) => produto.id
-        );
+        const idsProdutos = listaProdutos.map((produto) => produto.id);
 
         let groupData = [];
         let addonData = [];
@@ -109,17 +106,12 @@ export default function CardapioPublico() {
             .order('sort_order', { ascending: true });
 
           if (groupError) {
-            console.error(
-              'Erro ao carregar grupos:',
-              groupError
-            );
+            console.error('Erro ao carregar grupos:', groupError);
           } else {
             groupData = grupos || [];
           }
 
-          const idsGrupos = groupData.map(
-            (grupo) => grupo.id
-          );
+          const idsGrupos = groupData.map((grupo) => grupo.id);
 
           if (idsGrupos.length > 0) {
             const {
@@ -133,10 +125,7 @@ export default function CardapioPublico() {
               .order('sort_order', { ascending: true });
 
             if (addonError) {
-              console.error(
-                'Erro ao carregar adicionais:',
-                addonError
-              );
+              console.error('Erro ao carregar adicionais:', addonError);
             } else {
               addonData = itens || [];
             }
@@ -168,11 +157,6 @@ export default function CardapioPublico() {
     carregarCardapio(true);
   }, [carregarCardapio]);
 
-  /*
-   * Atualiza quando o cliente volta para a aba.
-   * Isso evita continuar mostrando dados antigos
-   * depois de editar o restaurante.
-   */
   useEffect(() => {
     function atualizarAoVoltar() {
       if (document.visibilityState === 'visible') {
@@ -241,7 +225,6 @@ export default function CardapioPublico() {
       alert(
         `"${produto.name}" foi selecionado. O carrinho será a próxima etapa.`
       );
-
       return;
     }
 
@@ -268,7 +251,6 @@ export default function CardapioPublico() {
 
   function adicionalSelecionado(grupoId, adicionalId) {
     const lista = selecionados[grupoId] || [];
-
     return lista.includes(adicionalId);
   }
 
@@ -341,7 +323,6 @@ export default function CardapioPublico() {
       alert(
         `Escolha uma opção em "${grupoPendente.name}".`
       );
-
       return;
     }
 
@@ -396,34 +377,22 @@ export default function CardapioPublico() {
             min-height: 100vh;
             background: #090a0d;
             color: white;
-
             display: flex;
             flex-direction: column;
-
             align-items: center;
             justify-content: center;
-
             gap: 18px;
-
-            font-family:
-              Arial,
-              sans-serif;
+            font-family: Arial, sans-serif;
           }
 
           .loaderPlate {
             font-size: 50px;
-
-            animation:
-              pulse
-              1.5s
-              infinite;
+            animation: pulse 1.5s infinite;
           }
 
           @keyframes pulse {
             50% {
-              transform:
-                scale(1.12);
-
+              transform: scale(1.12);
               opacity: 0.65;
             }
           }
@@ -458,20 +427,13 @@ export default function CardapioPublico() {
         <style jsx>{`
           .notFound {
             min-height: 100vh;
-
             display: grid;
             place-items: center;
-
             text-align: center;
-
             background: #090a0d;
             color: white;
-
             padding: 30px;
-
-            font-family:
-              Arial,
-              sans-serif;
+            font-family: Arial, sans-serif;
           }
 
           .notFoundIcon {
@@ -517,13 +479,30 @@ export default function CardapioPublico() {
       <div className="ambientLight lightOne" />
       <div className="ambientLight lightTwo" />
 
-      <div className="smoke smoke1" />
-      <div className="smoke smoke2" />
-      <div className="smoke smoke3" />
+      {/* FUMAÇA NOVA */}
+      <div className="smokeLayer">
+        <div className="smokeStream smokeLeft">
+          <span className="smokePuff puff1" />
+          <span className="smokePuff puff2" />
+          <span className="smokePuff puff3" />
+          <span className="smokePuff puff4" />
+        </div>
+
+        <div className="smokeStream smokeCenter">
+          <span className="smokePuff puff1" />
+          <span className="smokePuff puff2" />
+          <span className="smokePuff puff3" />
+        </div>
+
+        <div className="smokeStream smokeRight">
+          <span className="smokePuff puff1" />
+          <span className="smokePuff puff2" />
+          <span className="smokePuff puff3" />
+          <span className="smokePuff puff4" />
+        </div>
+      </div>
 
       <div className="menu">
-
-        {/* CAPA */}
 
         {restaurante.cover_url && (
           <div className="cover">
@@ -535,8 +514,6 @@ export default function CardapioPublico() {
             <div className="coverShade" />
           </div>
         )}
-
-        {/* CABEÇALHO */}
 
         <header
           className={`header ${
@@ -582,11 +559,8 @@ export default function CardapioPublico() {
               </h1>
 
               <div className="online">
-
                 <span className="onlineDot" />
-
                 Cardápio online
-
               </div>
 
             </div>
@@ -596,19 +570,15 @@ export default function CardapioPublico() {
           <div className="goldLine" />
         </header>
 
-        {/* INFORMAÇÕES */}
-
         <section className="restaurantDetails">
 
           {restaurante.address && (
             <div className="detail">
-
               <span className="detailIcon">
                 📍
               </span>
 
               <div>
-
                 <small>
                   ENDEREÇO
                 </small>
@@ -616,20 +586,16 @@ export default function CardapioPublico() {
                 <strong>
                   {restaurante.address}
                 </strong>
-
               </div>
-
             </div>
           )}
 
           <div className="detail">
-
             <span className="detailIcon">
               🛵
             </span>
 
             <div>
-
               <small>
                 ENTREGA
               </small>
@@ -643,22 +609,18 @@ export default function CardapioPublico() {
                       restaurante.delivery_fee
                     )}
               </strong>
-
             </div>
-
           </div>
 
           {Number(
             restaurante.minimum_order || 0
           ) > 0 && (
             <div className="detail">
-
               <span className="detailIcon">
                 🛒
               </span>
 
               <div>
-
                 <small>
                   PEDIDO MÍNIMO
                 </small>
@@ -668,15 +630,11 @@ export default function CardapioPublico() {
                     restaurante.minimum_order
                   )}
                 </strong>
-
               </div>
-
             </div>
           )}
 
         </section>
-
-        {/* CATEGORIAS */}
 
         {categorias.length > 0 && (
           <nav className="categoryNav">
@@ -699,8 +657,6 @@ export default function CardapioPublico() {
 
           </nav>
         )}
-
-        {/* PRODUTOS */}
 
         {produtos.length === 0 ? (
           <section className="empty">
@@ -767,7 +723,6 @@ export default function CardapioPublico() {
         )}
 
         <footer>
-
           <div className="footerLine" />
 
           <span>
@@ -777,12 +732,9 @@ export default function CardapioPublico() {
           <strong>
             MenuFlow
           </strong>
-
         </footer>
 
       </div>
-
-      {/* MODAL DE ADICIONAIS */}
 
       {produtoAberto && (
         <div
@@ -907,9 +859,7 @@ export default function CardapioPublico() {
 
                               <div>
                                 <strong>
-                                  {
-                                    adicional.name
-                                  }
+                                  {adicional.name}
                                 </strong>
 
                                 <span>
@@ -1033,7 +983,6 @@ export default function CardapioPublico() {
             sans-serif;
 
           position: relative;
-
           overflow: hidden;
         }
 
@@ -1082,6 +1031,247 @@ export default function CardapioPublico() {
             var(--primary);
         }
 
+        /* ==================================================
+           FUMAÇA NOVA
+           ================================================== */
+
+        .smokeLayer {
+          position: fixed;
+          inset: 0;
+
+          z-index: 2;
+
+          overflow: hidden;
+
+          pointer-events: none;
+
+          opacity: 1;
+        }
+
+        .smokeStream {
+          position: absolute;
+
+          bottom: -180px;
+
+          width: 180px;
+          height: 520px;
+
+          opacity: 0.55;
+
+          animation:
+            smokeTravel
+            15s
+            linear
+            infinite;
+        }
+
+        .smokeLeft {
+          left: -35px;
+
+          animation-duration:
+            17s;
+        }
+
+        .smokeCenter {
+          left: 48%;
+
+          width: 130px;
+
+          opacity: 0.22;
+
+          animation-duration:
+            22s;
+
+          animation-delay:
+            -9s;
+        }
+
+        .smokeRight {
+          right: -45px;
+
+          animation-duration:
+            20s;
+
+          animation-delay:
+            -6s;
+        }
+
+        .smokePuff {
+          position: absolute;
+
+          display: block;
+
+          border-radius:
+            50%;
+
+          background:
+            radial-gradient(
+              ellipse at center,
+              rgba(
+                255,
+                255,
+                255,
+                0.16
+              )
+              0%,
+              rgba(
+                220,
+                225,
+                230,
+                0.08
+              )
+              35%,
+              rgba(
+                200,
+                205,
+                215,
+                0.025
+              )
+              58%,
+              transparent
+              75%
+            );
+
+          filter:
+            blur(18px);
+
+          mix-blend-mode:
+            screen;
+
+          animation:
+            smokeSway
+            7s
+            ease-in-out
+            infinite
+            alternate;
+        }
+
+        .puff1 {
+          width: 120px;
+          height: 170px;
+
+          left: 20px;
+          bottom: 0;
+
+          opacity: 0.75;
+        }
+
+        .puff2 {
+          width: 145px;
+          height: 190px;
+
+          left: -5px;
+          bottom: 115px;
+
+          opacity: 0.55;
+
+          animation-delay:
+            -2s;
+        }
+
+        .puff3 {
+          width: 115px;
+          height: 175px;
+
+          left: 45px;
+          bottom: 240px;
+
+          opacity: 0.4;
+
+          animation-delay:
+            -4s;
+        }
+
+        .puff4 {
+          width: 150px;
+          height: 200px;
+
+          left: 5px;
+          bottom: 345px;
+
+          opacity: 0.22;
+
+          animation-delay:
+            -5s;
+        }
+
+        @keyframes smokeTravel {
+          0% {
+            transform:
+              translate3d(
+                0,
+                160px,
+                0
+              )
+              scale(0.65);
+
+            opacity: 0;
+          }
+
+          12% {
+            opacity: 0.45;
+          }
+
+          45% {
+            transform:
+              translate3d(
+                18px,
+                -35vh,
+                0
+              )
+              scale(1);
+
+            opacity: 0.5;
+          }
+
+          75% {
+            transform:
+              translate3d(
+                -12px,
+                -72vh,
+                0
+              )
+              scale(1.35);
+
+            opacity: 0.28;
+          }
+
+          100% {
+            transform:
+              translate3d(
+                25px,
+                -125vh,
+                0
+              )
+              scale(1.75);
+
+            opacity: 0;
+          }
+        }
+
+        @keyframes smokeSway {
+          0% {
+            transform:
+              translateX(-16px)
+              rotate(-5deg)
+              scaleX(0.88);
+          }
+
+          50% {
+            transform:
+              translateX(15px)
+              rotate(4deg)
+              scaleX(1.08);
+          }
+
+          100% {
+            transform:
+              translateX(-4px)
+              rotate(-2deg)
+              scaleX(0.95);
+          }
+        }
+
         /* CAPA */
 
         .cover {
@@ -1113,92 +1303,6 @@ export default function CardapioPublico() {
               rgba(8, 9, 12, 0.3) 45%,
               #08090c 100%
             );
-        }
-
-        /* FUMAÇA */
-
-        .smoke {
-          position: fixed;
-
-          width: 280px;
-          height: 280px;
-
-          border-radius: 50%;
-
-          background:
-            rgba(
-              255,
-              255,
-              255,
-              0.035
-            );
-
-          filter: blur(55px);
-
-          pointer-events: none;
-
-          z-index: 1;
-        }
-
-        .smoke1 {
-          left: -90px;
-          bottom: -120px;
-
-          animation:
-            smokeUp
-            15s
-            linear
-            infinite;
-        }
-
-        .smoke2 {
-          right: -100px;
-          bottom: -160px;
-
-          animation:
-            smokeUp
-            20s
-            linear
-            infinite
-            4s;
-        }
-
-        .smoke3 {
-          left: 35%;
-          bottom: -200px;
-
-          animation:
-            smokeUp
-            24s
-            linear
-            infinite
-            8s;
-        }
-
-        @keyframes smokeUp {
-          0% {
-            transform:
-              translateY(200px)
-              scale(0.7);
-
-            opacity: 0;
-          }
-
-          25% {
-            opacity: 0.7;
-          }
-
-          70% {
-            opacity: 0.25;
-          }
-
-          100% {
-            transform:
-              translateY(-120vh)
-              scale(1.8);
-
-            opacity: 0;
-          }
         }
 
         /* CABEÇALHO */
@@ -2182,6 +2286,25 @@ export default function CardapioPublico() {
               20px;
           }
 
+          .smokeLeft {
+            left: -80px;
+          }
+
+          .smokeRight {
+            right: -85px;
+          }
+
+          .smokeCenter {
+            left: 43%;
+
+            opacity: 0.13;
+          }
+
+          .smokeStream {
+            transform:
+              scale(0.8);
+          }
+
           .modalOverlay {
             padding: 0;
 
@@ -2235,6 +2358,20 @@ export default function CardapioPublico() {
               15px;
 
             font-size: 12px;
+          }
+        }
+
+        @media (
+          prefers-reduced-motion:
+          reduce
+        ) {
+          .smokeStream,
+          .smokePuff {
+            animation: none;
+          }
+
+          .smokeLayer {
+            opacity: 0.25;
           }
         }
       `}</style>
