@@ -55,6 +55,11 @@ export default function EditorRestaurante() {
   const [corPrimaria, setCorPrimaria] = useState('#6d5dfc');
   const [corSecundaria, setCorSecundaria] = useState('#111827');
 
+  // AJUSTE DA LOGO
+  const [logoZoom, setLogoZoom] = useState(1);
+  const [logoPositionX, setLogoPositionX] = useState(50);
+  const [logoPositionY, setLogoPositionY] = useState(50);
+
   // INFORMAÇÕES
   const [whatsapp, setWhatsapp] = useState('');
   const [endereco, setEndereco] = useState('');
@@ -129,10 +134,7 @@ export default function EditorRestaurante() {
       }
 
       const listaProdutos = productData || [];
-
-      const idsProdutos = listaProdutos.map(
-        (produto) => produto.id
-      );
+      const idsProdutos = listaProdutos.map((produto) => produto.id);
 
       let groupData = [];
       let addonData = [];
@@ -153,9 +155,7 @@ export default function EditorRestaurante() {
           groupData = grupos || [];
         }
 
-        const idsGrupos = groupData.map(
-          (grupo) => grupo.id
-        );
+        const idsGrupos = groupData.map((grupo) => grupo.id);
 
         if (idsGrupos.length > 0) {
           const {
@@ -195,7 +195,20 @@ export default function EditorRestaurante() {
         restaurantData.secondary_color || '#111827'
       );
 
-      // Carrega as informações já salvas
+      // Carrega o enquadramento salvo da logo
+      setLogoZoom(
+        Number(restaurantData.logo_zoom ?? 1)
+      );
+
+      setLogoPositionX(
+        Number(restaurantData.logo_position_x ?? 50)
+      );
+
+      setLogoPositionY(
+        Number(restaurantData.logo_position_y ?? 50)
+      );
+
+      // Informações
       setWhatsapp(restaurantData.whatsapp || '');
       setEndereco(restaurantData.address || '');
 
@@ -247,11 +260,7 @@ export default function EditorRestaurante() {
 
       if (error) throw error;
 
-      setCategorias((atual) => [
-        ...atual,
-        data
-      ]);
-
+      setCategorias((atual) => [...atual, data]);
       setNovaCategoria('');
     } catch (error) {
       console.error(error);
@@ -323,9 +332,7 @@ export default function EditorRestaurante() {
       if (error) throw error;
 
       setCategorias((atual) =>
-        atual.filter(
-          (item) => item.id !== categoria.id
-        )
+        atual.filter((item) => item.id !== categoria.id)
       );
     } catch (error) {
       console.error(error);
@@ -343,9 +350,7 @@ export default function EditorRestaurante() {
     const limite = 5 * 1024 * 1024;
 
     if (file.size > limite) {
-      throw new Error(
-        'A imagem deve ter no máximo 5 MB.'
-      );
+      throw new Error('A imagem deve ter no máximo 5 MB.');
     }
 
     const tiposPermitidos = [
@@ -430,9 +435,7 @@ export default function EditorRestaurante() {
       );
 
       if (Number.isNaN(preco) || preco < 0) {
-        throw new Error(
-          'Digite um preço válido.'
-        );
+        throw new Error('Digite um preço válido.');
       }
 
       let imageUrl = null;
@@ -448,11 +451,9 @@ export default function EditorRestaurante() {
         .from('products')
         .insert({
           restaurant_id: id,
-          category_id:
-            categoriaProduto || null,
+          category_id: categoriaProduto || null,
           name: nomeProduto.trim(),
-          description:
-            descricaoProduto.trim() || null,
+          description: descricaoProduto.trim() || null,
           price: preco,
           image_url: imageUrl,
           active: true,
@@ -464,10 +465,7 @@ export default function EditorRestaurante() {
 
       if (error) throw error;
 
-      setProdutos((atual) => [
-        ...atual,
-        data
-      ]);
+      setProdutos((atual) => [...atual, data]);
 
       setNomeProduto('');
       setDescricaoProduto('');
@@ -477,9 +475,7 @@ export default function EditorRestaurante() {
       setDestaqueProduto(false);
 
       const input =
-        document.getElementById(
-          'fotoProduto'
-        );
+        document.getElementById('fotoProduto');
 
       if (input) {
         input.value = '';
@@ -550,9 +546,7 @@ export default function EditorRestaurante() {
       if (error) throw error;
 
       setProdutos((atual) =>
-        atual.filter(
-          (item) => item.id !== produto.id
-        )
+        atual.filter((item) => item.id !== produto.id)
       );
     } catch (error) {
       console.error(error);
@@ -592,14 +586,12 @@ export default function EditorRestaurante() {
           product_id: produtoAdicional,
           name: nomeGrupo.trim(),
           required: grupoObrigatorio,
-          min_select:
-            grupoObrigatorio ? 1 : 0,
+          min_select: grupoObrigatorio ? 1 : 0,
           max_select: maximo,
           sort_order:
             gruposAdicionais.filter(
               (grupo) =>
-                grupo.product_id ===
-                produtoAdicional
+                grupo.product_id === produtoAdicional
             ).length
         })
         .select()
@@ -643,9 +635,7 @@ export default function EditorRestaurante() {
       );
 
       if (Number.isNaN(preco) || preco < 0) {
-        throw new Error(
-          'Digite um preço válido.'
-        );
+        throw new Error('Digite um preço válido.');
       }
 
       const { data, error } = await supabase
@@ -657,8 +647,7 @@ export default function EditorRestaurante() {
           active: true,
           sort_order:
             adicionais.filter(
-              (item) =>
-                item.group_id === grupoId
+              (item) => item.group_id === grupoId
             ).length
         })
         .select()
@@ -700,15 +689,12 @@ export default function EditorRestaurante() {
       if (error) throw error;
 
       setGruposAdicionais((atual) =>
-        atual.filter(
-          (item) => item.id !== grupo.id
-        )
+        atual.filter((item) => item.id !== grupo.id)
       );
 
       setAdicionais((atual) =>
         atual.filter(
-          (item) =>
-            item.group_id !== grupo.id
+          (item) => item.group_id !== grupo.id
         )
       );
     } catch (error) {
@@ -736,8 +722,7 @@ export default function EditorRestaurante() {
 
       setAdicionais((atual) =>
         atual.filter(
-          (item) =>
-            item.id !== adicional.id
+          (item) => item.id !== adicional.id
         )
       );
     } catch (error) {
@@ -754,38 +739,54 @@ export default function EditorRestaurante() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setErro(
-        'A logo deve ter no máximo 5 MB.'
-      );
+      setErro('A logo deve ter no máximo 5 MB.');
+      return;
+    }
+
+    const tiposPermitidos = [
+      'image/jpeg',
+      'image/png',
+      'image/webp'
+    ];
+
+    if (!tiposPermitidos.includes(file.type)) {
+      setErro('Use uma imagem JPG, PNG ou WebP.');
       return;
     }
 
     setErro('');
     setLogoArquivo(file);
 
-    const preview =
-      URL.createObjectURL(file);
+    const preview = URL.createObjectURL(file);
 
     setLogoPreview(preview);
+
+    // Nova logo começa centralizada
+    setLogoZoom(1);
+    setLogoPositionX(50);
+    setLogoPositionY(50);
   }
 
   function escolherCapa(file) {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setErro(
-        'A capa deve ter no máximo 5 MB.'
-      );
+      setErro('A capa deve ter no máximo 5 MB.');
       return;
     }
 
     setErro('');
     setCoverArquivo(file);
 
-    const preview =
-      URL.createObjectURL(file);
+    const preview = URL.createObjectURL(file);
 
     setCoverPreview(preview);
+  }
+
+  function centralizarLogo() {
+    setLogoZoom(1);
+    setLogoPositionX(50);
+    setLogoPositionY(50);
   }
 
   async function salvarAparencia() {
@@ -815,16 +816,16 @@ export default function EditorRestaurante() {
       const { error } = await supabase
         .from('restaurants')
         .update({
-          logo_url:
-            novaLogoUrl || null,
-          cover_url:
-            novaCoverUrl || null,
-          primary_color:
-            corPrimaria,
-          secondary_color:
-            corSecundaria,
-          updated_at:
-            new Date().toISOString()
+          logo_url: novaLogoUrl || null,
+          cover_url: novaCoverUrl || null,
+          primary_color: corPrimaria,
+          secondary_color: corSecundaria,
+
+          logo_zoom: Number(logoZoom),
+          logo_position_x: Number(logoPositionX),
+          logo_position_y: Number(logoPositionY),
+
+          updated_at: new Date().toISOString()
         })
         .eq('id', id);
 
@@ -834,39 +835,32 @@ export default function EditorRestaurante() {
 
       setRestaurante((atual) => ({
         ...atual,
-        logo_url:
-          novaLogoUrl || null,
-        cover_url:
-          novaCoverUrl || null,
-        primary_color:
-          corPrimaria,
-        secondary_color:
-          corSecundaria
+
+        logo_url: novaLogoUrl || null,
+        cover_url: novaCoverUrl || null,
+
+        primary_color: corPrimaria,
+        secondary_color: corSecundaria,
+
+        logo_zoom: Number(logoZoom),
+        logo_position_x: Number(logoPositionX),
+        logo_position_y: Number(logoPositionY)
       }));
 
       setLogoUrl(novaLogoUrl || '');
       setCoverUrl(novaCoverUrl || '');
 
-      setLogoPreview(
-        novaLogoUrl || ''
-      );
-
-      setCoverPreview(
-        novaCoverUrl || ''
-      );
+      setLogoPreview(novaLogoUrl || '');
+      setCoverPreview(novaCoverUrl || '');
 
       setLogoArquivo(null);
       setCoverArquivo(null);
 
       const inputLogo =
-        document.getElementById(
-          'logoRestaurante'
-        );
+        document.getElementById('logoRestaurante');
 
       const inputCapa =
-        document.getElementById(
-          'capaRestaurante'
-        );
+        document.getElementById('capaRestaurante');
 
       if (inputLogo) {
         inputLogo.value = '';
@@ -876,9 +870,7 @@ export default function EditorRestaurante() {
         inputCapa.value = '';
       }
 
-      alert(
-        'Aparência salva com sucesso!'
-      );
+      alert('Aparência salva com sucesso!');
     } catch (error) {
       console.error(
         'Erro ao salvar aparência:',
@@ -908,7 +900,6 @@ export default function EditorRestaurante() {
 
     if (!texto) return 0;
 
-    // Formato brasileiro: 1.234,56
     if (texto.includes(',')) {
       return Number(
         texto
@@ -931,27 +922,16 @@ export default function EditorRestaurante() {
     setErro('');
 
     try {
-      const taxa = converterDinheiro(
-        taxaEntrega
-      );
+      const taxa = converterDinheiro(taxaEntrega);
+      const minimo = converterDinheiro(pedidoMinimo);
 
-      const minimo = converterDinheiro(
-        pedidoMinimo
-      );
-
-      if (
-        Number.isNaN(taxa) ||
-        taxa < 0
-      ) {
+      if (Number.isNaN(taxa) || taxa < 0) {
         throw new Error(
           'Digite uma taxa de entrega válida.'
         );
       }
 
-      if (
-        Number.isNaN(minimo) ||
-        minimo < 0
-      ) {
+      if (Number.isNaN(minimo) || minimo < 0) {
         throw new Error(
           'Digite um pedido mínimo válido.'
         );
@@ -960,14 +940,11 @@ export default function EditorRestaurante() {
       const { error } = await supabase
         .from('restaurants')
         .update({
-          whatsapp:
-            whatsapp.trim() || null,
-          address:
-            endereco.trim() || null,
+          whatsapp: whatsapp.trim() || null,
+          address: endereco.trim() || null,
           delivery_fee: taxa,
           minimum_order: minimo,
-          updated_at:
-            new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
         .eq('id', id);
 
@@ -977,17 +954,13 @@ export default function EditorRestaurante() {
 
       setRestaurante((atual) => ({
         ...atual,
-        whatsapp:
-          whatsapp.trim() || null,
-        address:
-          endereco.trim() || null,
+        whatsapp: whatsapp.trim() || null,
+        address: endereco.trim() || null,
         delivery_fee: taxa,
         minimum_order: minimo
       }));
 
-      alert(
-        'Informações salvas com sucesso!'
-      );
+      alert('Informações salvas com sucesso!');
     } catch (error) {
       console.error(
         'Erro ao salvar informações:',
@@ -1010,9 +983,7 @@ export default function EditorRestaurante() {
   // ============================================================
 
   function dinheiro(valor) {
-    return Number(
-      valor || 0
-    ).toLocaleString(
+    return Number(valor || 0).toLocaleString(
       'pt-BR',
       {
         style: 'currency',
@@ -1042,9 +1013,7 @@ export default function EditorRestaurante() {
     return (
       <main style={styles.center}>
         <div>
-          <h2>
-            Restaurante não encontrado.
-          </h2>
+          <h2>Restaurante não encontrado.</h2>
 
           {erro && (
             <p style={{ color: '#dc2626' }}>
@@ -1101,9 +1070,7 @@ export default function EditorRestaurante() {
                 inputMode="tel"
                 value={whatsapp}
                 onChange={(e) =>
-                  setWhatsapp(
-                    e.target.value
-                  )
+                  setWhatsapp(e.target.value)
                 }
                 placeholder="Ex.: (67) 99999-9999"
               />
@@ -1121,9 +1088,7 @@ export default function EditorRestaurante() {
                 style={styles.textarea}
                 value={endereco}
                 onChange={(e) =>
-                  setEndereco(
-                    e.target.value
-                  )
+                  setEndereco(e.target.value)
                 }
                 placeholder="Ex.: Rua das Flores, 123 - Centro"
               />
@@ -1141,9 +1106,7 @@ export default function EditorRestaurante() {
                   style={styles.moneyInput}
                   value={taxaEntrega}
                   onChange={(e) =>
-                    setTaxaEntrega(
-                      e.target.value
-                    )
+                    setTaxaEntrega(e.target.value)
                   }
                   inputMode="decimal"
                   placeholder="0,00"
@@ -1167,9 +1130,7 @@ export default function EditorRestaurante() {
                   style={styles.moneyInput}
                   value={pedidoMinimo}
                   onChange={(e) =>
-                    setPedidoMinimo(
-                      e.target.value
-                    )
+                    setPedidoMinimo(e.target.value)
                   }
                   inputMode="decimal"
                   placeholder="0,00"
@@ -1189,42 +1150,36 @@ export default function EditorRestaurante() {
 
               <div style={styles.infoRow}>
                 <span>📱 WhatsApp</span>
+
                 <strong>
-                  {whatsapp ||
-                    'Não informado'}
+                  {whatsapp || 'Não informado'}
                 </strong>
               </div>
 
               <div style={styles.infoRow}>
                 <span>📍 Endereço</span>
+
                 <strong>
-                  {endereco ||
-                    'Não informado'}
+                  {endereco || 'Não informado'}
                 </strong>
               </div>
 
               <div style={styles.infoRow}>
-                <span>
-                  🛵 Taxa de entrega
-                </span>
+                <span>🛵 Taxa de entrega</span>
+
                 <strong>
                   {dinheiro(
-                    converterDinheiro(
-                      taxaEntrega
-                    ) || 0
+                    converterDinheiro(taxaEntrega) || 0
                   )}
                 </strong>
               </div>
 
               <div style={styles.infoRow}>
-                <span>
-                  🛒 Pedido mínimo
-                </span>
+                <span>🛒 Pedido mínimo</span>
+
                 <strong>
                   {dinheiro(
-                    converterDinheiro(
-                      pedidoMinimo
-                    ) || 0
+                    converterDinheiro(pedidoMinimo) || 0
                   )}
                 </strong>
               </div>
@@ -1239,8 +1194,7 @@ export default function EditorRestaurante() {
             <button
               style={{
                 ...styles.primary,
-                background:
-                  corPrimaria
+                background: corPrimaria
               }}
               type="submit"
               disabled={salvando}
@@ -1301,15 +1255,133 @@ export default function EditorRestaurante() {
             </label>
 
             {logoPreview && (
-              <div
-                style={styles.logoPreviewBox}
-              >
-                <img
-                  src={logoPreview}
-                  alt="Logo do restaurante"
-                  style={styles.logoPreview}
-                />
-              </div>
+              <section style={styles.logoEditor}>
+                <div style={styles.logoEditorTop}>
+                  <div>
+                    <strong style={styles.logoEditorTitle}>
+                      Ajustar logo
+                    </strong>
+
+                    <small style={styles.hintBlock}>
+                      Ajuste o enquadramento como
+                      em uma foto de perfil.
+                    </small>
+                  </div>
+
+                  <button
+                    type="button"
+                    style={styles.secondary}
+                    onClick={centralizarLogo}
+                  >
+                    ⦿ Centralizar
+                  </button>
+                </div>
+
+                <div style={styles.logoCropArea}>
+                  <div style={styles.logoCropGlow} />
+
+                  <img
+                    src={logoPreview}
+                    alt="Ajuste da logo"
+                    draggable="false"
+                    style={{
+                      ...styles.logoAdjustable,
+
+                      left: `${logoPositionX}%`,
+                      top: `${logoPositionY}%`,
+
+                      transform:
+                        `translate(-50%, -50%) scale(${logoZoom})`
+                    }}
+                  />
+
+                  <div style={styles.logoCropBorder} />
+                </div>
+
+                <div style={styles.logoControls}>
+                  <label style={styles.sliderLabel}>
+                    <div style={styles.sliderHeader}>
+                      <span>🔍 Zoom</span>
+
+                      <strong>
+                        {Number(logoZoom).toFixed(1)}x
+                      </strong>
+                    </div>
+
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3"
+                      step="0.1"
+                      value={logoZoom}
+                      onChange={(e) =>
+                        setLogoZoom(
+                          Number(e.target.value)
+                        )
+                      }
+                      style={styles.range}
+                    />
+                  </label>
+
+                  <label style={styles.sliderLabel}>
+                    <div style={styles.sliderHeader}>
+                      <span>
+                        ↔️ Esquerda / direita
+                      </span>
+
+                      <strong>
+                        {Math.round(logoPositionX)}%
+                      </strong>
+                    </div>
+
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={logoPositionX}
+                      onChange={(e) =>
+                        setLogoPositionX(
+                          Number(e.target.value)
+                        )
+                      }
+                      style={styles.range}
+                    />
+                  </label>
+
+                  <label style={styles.sliderLabel}>
+                    <div style={styles.sliderHeader}>
+                      <span>
+                        ↕️ Cima / baixo
+                      </span>
+
+                      <strong>
+                        {Math.round(logoPositionY)}%
+                      </strong>
+                    </div>
+
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={logoPositionY}
+                      onChange={(e) =>
+                        setLogoPositionY(
+                          Number(e.target.value)
+                        )
+                      }
+                      style={styles.range}
+                    />
+                  </label>
+                </div>
+
+                <small style={styles.logoHelp}>
+                  💡 A prévia acima representa o
+                  enquadramento que será usado no
+                  cardápio.
+                </small>
+              </section>
             )}
 
             <label style={styles.label}>
@@ -1348,9 +1420,7 @@ export default function EditorRestaurante() {
                 type="color"
                 value={corPrimaria}
                 onChange={(e) =>
-                  setCorPrimaria(
-                    e.target.value
-                  )
+                  setCorPrimaria(e.target.value)
                 }
                 style={styles.colorInput}
               />
@@ -1363,9 +1433,7 @@ export default function EditorRestaurante() {
                 type="color"
                 value={corSecundaria}
                 onChange={(e) =>
-                  setCorSecundaria(
-                    e.target.value
-                  )
+                  setCorSecundaria(e.target.value)
                 }
                 style={styles.colorInput}
               />
@@ -1374,8 +1442,7 @@ export default function EditorRestaurante() {
             <div
               style={{
                 ...styles.preview,
-                background:
-                  corSecundaria
+                background: corSecundaria
               }}
             >
               {coverPreview && (
@@ -1386,15 +1453,23 @@ export default function EditorRestaurante() {
                 />
               )}
 
-              <div
-                style={styles.previewContent}
-              >
+              <div style={styles.previewContent}>
                 {logoPreview && (
-                  <img
-                    src={logoPreview}
-                    alt="Prévia da logo"
-                    style={styles.previewLogo}
-                  />
+                  <div style={styles.previewLogoBox}>
+                    <img
+                      src={logoPreview}
+                      alt="Prévia da logo"
+                      style={{
+                        ...styles.previewLogoAdjusted,
+
+                        left: `${logoPositionX}%`,
+                        top: `${logoPositionY}%`,
+
+                        transform:
+                          `translate(-50%, -50%) scale(${logoZoom})`
+                      }}
+                    />
+                  </div>
                 )}
 
                 <strong
@@ -1414,8 +1489,7 @@ export default function EditorRestaurante() {
                   type="button"
                   style={{
                     ...styles.previewButton,
-                    background:
-                      corPrimaria
+                    background: corPrimaria
                   }}
                 >
                   Adicionar ao pedido
@@ -1432,8 +1506,7 @@ export default function EditorRestaurante() {
             <button
               style={{
                 ...styles.primary,
-                background:
-                  corPrimaria
+                background: corPrimaria
               }}
               type="button"
               onClick={salvarAparencia}
@@ -1485,9 +1558,7 @@ export default function EditorRestaurante() {
               style={styles.input}
               value={novaCategoria}
               onChange={(e) =>
-                setNovaCategoria(
-                  e.target.value
-                )
+                setNovaCategoria(e.target.value)
               }
               placeholder="Ex.: Pizzas"
             />
@@ -1526,13 +1597,9 @@ export default function EditorRestaurante() {
                     {categoria.name}
                   </strong>
 
-                  <div
-                    style={styles.actions}
-                  >
+                  <div style={styles.actions}>
                     <button
-                      style={
-                        styles.secondary
-                      }
+                      style={styles.secondary}
                       type="button"
                       onClick={() =>
                         renomearCategoria(
@@ -1606,9 +1673,7 @@ export default function EditorRestaurante() {
                 style={styles.input}
                 value={nomeProduto}
                 onChange={(e) =>
-                  setNomeProduto(
-                    e.target.value
-                  )
+                  setNomeProduto(e.target.value)
                 }
                 placeholder="Ex.: Pizza de Frango"
                 required
@@ -1666,9 +1731,7 @@ export default function EditorRestaurante() {
                 style={styles.input}
                 value={precoProduto}
                 onChange={(e) =>
-                  setPrecoProduto(
-                    e.target.value
-                  )
+                  setPrecoProduto(e.target.value)
                 }
                 placeholder="Ex.: 39,90"
                 inputMode="decimal"
@@ -1686,8 +1749,7 @@ export default function EditorRestaurante() {
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) =>
                   setFotoProduto(
-                    e.target.files?.[0] ||
-                      null
+                    e.target.files?.[0] || null
                   )
                 }
               />
@@ -1697,9 +1759,7 @@ export default function EditorRestaurante() {
               JPG, PNG ou WebP. Máximo 5 MB.
             </small>
 
-            <label
-              style={styles.checkLabel}
-            >
+            <label style={styles.checkLabel}>
               <input
                 type="checkbox"
                 checked={destaqueProduto}
@@ -1731,8 +1791,7 @@ export default function EditorRestaurante() {
           )}
 
           <h2 style={styles.sectionTitle}>
-            Produtos cadastrados (
-            {produtos.length})
+            Produtos cadastrados ({produtos.length})
           </h2>
 
           {produtos.length === 0 && (
@@ -1746,93 +1805,49 @@ export default function EditorRestaurante() {
               (produto) => (
                 <article
                   key={produto.id}
-                  style={
-                    styles.productCard
-                  }
+                  style={styles.productCard}
                 >
                   {produto.image_url ? (
                     <img
-                      src={
-                        produto.image_url
-                      }
+                      src={produto.image_url}
                       alt={produto.name}
-                      style={
-                        styles.productImage
-                      }
+                      style={styles.productImage}
                     />
                   ) : (
-                    <div
-                      style={
-                        styles.noImage
-                      }
-                    >
+                    <div style={styles.noImage}>
                       🍕
                     </div>
                   )}
 
-                  <div
-                    style={
-                      styles.productBody
-                    }
-                  >
-                    <div
-                      style={
-                        styles.productTop
-                      }
-                    >
-                      <strong
-                        style={
-                          styles.productName
-                        }
-                      >
+                  <div style={styles.productBody}>
+                    <div style={styles.productTop}>
+                      <strong style={styles.productName}>
                         {produto.name}
                       </strong>
 
                       {!produto.active && (
-                        <span
-                          style={
-                            styles.inactive
-                          }
-                        >
+                        <span style={styles.inactive}>
                           Inativo
                         </span>
                       )}
                     </div>
 
                     {produto.description && (
-                      <p
-                        style={
-                          styles.description
-                        }
-                      >
-                        {
-                          produto.description
-                        }
+                      <p style={styles.description}>
+                        {produto.description}
                       </p>
                     )}
 
-                    <strong
-                      style={styles.price}
-                    >
-                      {dinheiro(
-                        produto.price
-                      )}
+                    <strong style={styles.price}>
+                      {dinheiro(produto.price)}
                     </strong>
 
-                    <div
-                      style={
-                        styles.actions
-                      }
-                    >
+                    <div style={styles.actions}>
                       <button
-                        style={
-                          styles.secondary
-                        }
+                        style={styles.secondary}
                         type="button"
                         onClick={() =>
-                          alternarProduto(
-                            produto
-                          )
+                          alternarProduto(produto)
                         }
                       >
                         {produto.active
@@ -1841,14 +1856,10 @@ export default function EditorRestaurante() {
                       </button>
 
                       <button
-                        style={
-                          styles.danger
-                        }
+                        style={styles.danger}
                         type="button"
                         onClick={() =>
-                          excluirProduto(
-                            produto
-                          )
+                          excluirProduto(produto)
                         }
                       >
                         Excluir
@@ -1933,17 +1944,13 @@ export default function EditorRestaurante() {
                 style={styles.input}
                 value={nomeGrupo}
                 onChange={(e) =>
-                  setNomeGrupo(
-                    e.target.value
-                  )
+                  setNomeGrupo(e.target.value)
                 }
                 placeholder="Ex.: Escolha a borda"
               />
             </label>
 
-            <label
-              style={styles.checkLabel}
-            >
+            <label style={styles.checkLabel}>
               <input
                 type="checkbox"
                 checked={grupoObrigatorio}
@@ -1966,9 +1973,7 @@ export default function EditorRestaurante() {
                 min="1"
                 value={maxSelecoes}
                 onChange={(e) =>
-                  setMaxSelecoes(
-                    e.target.value
-                  )
+                  setMaxSelecoes(e.target.value)
                 }
               />
             </label>
@@ -1976,9 +1981,7 @@ export default function EditorRestaurante() {
             <button
               style={styles.primary}
               type="button"
-              onClick={
-                criarGrupoAdicional
-              }
+              onClick={criarGrupoAdicional}
               disabled={salvando}
             >
               {salvando
@@ -1998,8 +2001,7 @@ export default function EditorRestaurante() {
             {gruposAdicionais.length})
           </h2>
 
-          {gruposAdicionais.length ===
-            0 && (
+          {gruposAdicionais.length === 0 && (
             <div style={styles.empty}>
               Nenhum grupo de adicionais
               cadastrado.
@@ -2012,132 +2014,82 @@ export default function EditorRestaurante() {
                 const produto =
                   produtos.find(
                     (item) =>
-                      item.id ===
-                      grupo.product_id
+                      item.id === grupo.product_id
                   );
 
                 const itensGrupo =
                   adicionais.filter(
                     (item) =>
-                      item.group_id ===
-                      grupo.id
+                      item.group_id === grupo.id
                   );
 
                 return (
                   <div
                     key={grupo.id}
-                    style={
-                      styles.productForm
-                    }
+                    style={styles.productForm}
                   >
                     <div>
-                      <strong
-                        style={
-                          styles.productName
-                        }
-                      >
+                      <strong style={styles.productName}>
                         {grupo.name}
                       </strong>
 
-                      <p
-                        style={
-                          styles.description
-                        }
-                      >
+                      <p style={styles.description}>
                         Produto:{' '}
-                        {produto?.name ||
-                          'Produto'}
+                        {produto?.name || 'Produto'}
                       </p>
 
-                      <small
-                        style={
-                          styles.hint
-                        }
-                      >
+                      <small style={styles.hint}>
                         {grupo.required
                           ? 'Obrigatório'
                           : 'Opcional'}
                         {' • '}
-                        Máximo:{' '}
-                        {
-                          grupo.max_select
-                        }
+                        Máximo: {grupo.max_select}
                       </small>
                     </div>
 
-                    <div
-                      style={
-                        styles.addonForm
-                      }
-                    >
+                    <div style={styles.addonForm}>
                       <input
-                        style={
-                          styles.input
-                        }
+                        style={styles.input}
                         value={
-                          grupoSelecionado ===
-                          grupo.id
+                          grupoSelecionado === grupo.id
                             ? nomeAdicional
                             : ''
                         }
                         onFocus={() =>
-                          setGrupoSelecionado(
-                            grupo.id
-                          )
+                          setGrupoSelecionado(grupo.id)
                         }
                         onChange={(e) => {
-                          setGrupoSelecionado(
-                            grupo.id
-                          );
-
-                          setNomeAdicional(
-                            e.target.value
-                          );
+                          setGrupoSelecionado(grupo.id);
+                          setNomeAdicional(e.target.value);
                         }}
                         placeholder="Ex.: Catupiry"
                       />
 
                       <input
-                        style={
-                          styles.input
-                        }
+                        style={styles.input}
                         value={
-                          grupoSelecionado ===
-                          grupo.id
+                          grupoSelecionado === grupo.id
                             ? precoAdicional
                             : ''
                         }
                         onFocus={() =>
-                          setGrupoSelecionado(
-                            grupo.id
-                          )
+                          setGrupoSelecionado(grupo.id)
                         }
                         onChange={(e) => {
-                          setGrupoSelecionado(
-                            grupo.id
-                          );
-
-                          setPrecoAdicional(
-                            e.target.value
-                          );
+                          setGrupoSelecionado(grupo.id);
+                          setPrecoAdicional(e.target.value);
                         }}
                         placeholder="Preço"
                         inputMode="decimal"
                       />
 
                       <button
-                        style={
-                          styles.primary
-                        }
+                        style={styles.primary}
                         type="button"
                         onClick={() =>
-                          criarAdicional(
-                            grupo.id
-                          )
+                          criarAdicional(grupo.id)
                         }
-                        disabled={
-                          salvando
-                        }
+                        disabled={salvando}
                       >
                         + Adicionar
                       </button>
@@ -2146,25 +2098,15 @@ export default function EditorRestaurante() {
                     {itensGrupo.map(
                       (adicional) => (
                         <div
-                          key={
-                            adicional.id
-                          }
-                          style={
-                            styles.listItem
-                          }
+                          key={adicional.id}
+                          style={styles.listItem}
                         >
                           <div>
                             <strong>
-                              {
-                                adicional.name
-                              }
+                              {adicional.name}
                             </strong>
 
-                            <div
-                              style={
-                                styles.price
-                              }
-                            >
+                            <div style={styles.price}>
                               {dinheiro(
                                 adicional.price
                               )}
@@ -2172,9 +2114,7 @@ export default function EditorRestaurante() {
                           </div>
 
                           <button
-                            style={
-                              styles.danger
-                            }
+                            style={styles.danger}
                             type="button"
                             onClick={() =>
                               excluirAdicional(
@@ -2192,9 +2132,7 @@ export default function EditorRestaurante() {
                       style={styles.danger}
                       type="button"
                       onClick={() =>
-                        excluirGrupoAdicional(
-                          grupo
-                        )
+                        excluirGrupoAdicional(grupo)
                       }
                     >
                       Excluir grupo
@@ -2242,11 +2180,9 @@ export default function EditorRestaurante() {
           </div>
 
           <span style={styles.badge}>
-            {restaurante.status ===
-            'active'
+            {restaurante.status === 'active'
               ? 'Ativo'
-              : restaurante.status ===
-                'paused'
+              : restaurante.status === 'paused'
               ? 'Pausado'
               : 'Demonstração'}
           </span>
@@ -2255,165 +2191,99 @@ export default function EditorRestaurante() {
         <section style={styles.grid}>
           <button
             style={styles.card}
-            onClick={() =>
-              setTela('categorias')
-            }
+            onClick={() => setTela('categorias')}
           >
-            <span style={styles.icon}>
-              📂
-            </span>
+            <span style={styles.icon}>📂</span>
 
-            <strong
-              style={styles.cardTitle}
-            >
+            <strong style={styles.cardTitle}>
               Categorias
             </strong>
 
-            <small
-              style={styles.cardText}
-            >
-              {categorias.length}{' '}
-              cadastradas
+            <small style={styles.cardText}>
+              {categorias.length} cadastradas
             </small>
           </button>
 
           <button
             style={styles.card}
-            onClick={() =>
-              setTela('produtos')
-            }
+            onClick={() => setTela('produtos')}
           >
-            <span style={styles.icon}>
-              🍕
-            </span>
+            <span style={styles.icon}>🍕</span>
 
-            <strong
-              style={styles.cardTitle}
-            >
+            <strong style={styles.cardTitle}>
               Produtos
             </strong>
 
-            <small
-              style={styles.cardText}
-            >
-              {produtos.length}{' '}
-              cadastrados
+            <small style={styles.cardText}>
+              {produtos.length} cadastrados
             </small>
           </button>
 
           <button
             style={styles.card}
-            onClick={() =>
-              setTela('adicionais')
-            }
+            onClick={() => setTela('adicionais')}
           >
-            <span style={styles.icon}>
-              ➕
-            </span>
+            <span style={styles.icon}>➕</span>
 
-            <strong
-              style={styles.cardTitle}
-            >
+            <strong style={styles.cardTitle}>
               Adicionais
             </strong>
 
-            <small
-              style={styles.cardText}
-            >
-              {gruposAdicionais.length}{' '}
-              grupos cadastrados
+            <small style={styles.cardText}>
+              {gruposAdicionais.length} grupos cadastrados
             </small>
           </button>
 
           <button
             style={styles.card}
-            onClick={() =>
-              setTela('aparencia')
-            }
+            onClick={() => setTela('aparencia')}
           >
-            <span style={styles.icon}>
-              🎨
-            </span>
+            <span style={styles.icon}>🎨</span>
 
-            <strong
-              style={styles.cardTitle}
-            >
+            <strong style={styles.cardTitle}>
               Aparência
             </strong>
 
-            <small
-              style={styles.cardText}
-            >
-              Logo, capa e cores.
+            <small style={styles.cardText}>
+              Logo, enquadramento, capa e cores.
             </small>
           </button>
 
           <button
             style={styles.card}
-            onClick={() =>
-              setTela('informacoes')
-            }
+            onClick={() => setTela('informacoes')}
           >
-            <span style={styles.icon}>
-              📱
-            </span>
+            <span style={styles.icon}>📱</span>
 
-            <strong
-              style={styles.cardTitle}
-            >
+            <strong style={styles.cardTitle}>
               Informações
             </strong>
 
-            <small
-              style={styles.cardText}
-            >
+            <small style={styles.cardText}>
               WhatsApp, endereço e entrega.
             </small>
           </button>
 
           <button
-  style={styles.card}
-  onClick={() => {
-    window.location.href = `/cardapio/${restaurante.slug}`;
-  }}
->
-  <span style={styles.icon}>
-    👁️
-  </span>
+            style={styles.card}
+            onClick={() => {
+              window.location.href =
+                `/cardapio/${restaurante.slug}`;
+            }}
+          >
+            <span style={styles.icon}>👁️</span>
 
-  <strong style={styles.cardTitle}>
-    Visualizar cardápio
-  </strong>
+            <strong style={styles.cardTitle}>
+              Visualizar cardápio
+            </strong>
 
-  <small style={styles.cardText}>
-    Veja o cardápio como o cliente.
-  </small>
-</button>
+            <small style={styles.cardText}>
+              Veja o cardápio como o cliente.
+            </small>
+          </button>
         </section>
       </section>
     </main>
-  );
-}
-
-function EditorCard({
-  icon,
-  title,
-  text
-}) {
-  return (
-    <button style={styles.card}>
-      <span style={styles.icon}>
-        {icon}
-      </span>
-
-      <strong style={styles.cardTitle}>
-        {title}
-      </strong>
-
-      <small style={styles.cardText}>
-        {text}
-      </small>
-    </button>
   );
 }
 
@@ -2586,6 +2456,14 @@ const styles = {
     fontWeight: '400'
   },
 
+  hintBlock: {
+    display: 'block',
+    color: '#6b7280',
+    fontWeight: '400',
+    marginTop: '5px',
+    lineHeight: '1.4'
+  },
+
   primary: {
     border: 0,
     background: '#6d5dfc',
@@ -2728,104 +2606,75 @@ const styles = {
     cursor: 'pointer'
   },
 
-  logoPreviewBox: {
-    background: '#f3f4f6',
-    borderRadius: '16px',
-    padding: '20px',
-    display: 'flex',
-    justifyContent: 'center'
-  },
+  // ============================================================
+  // NOVO EDITOR DA LOGO
+  // ============================================================
 
-  logoPreview: {
-    width: '120px',
-    height: '120px',
-    objectFit: 'contain',
-    borderRadius: '16px'
-  },
-
-  coverPreview: {
-    width: '100%',
-    height: '200px',
-    objectFit: 'cover',
-    borderRadius: '16px'
-  },
-
-  preview: {
-    overflow: 'hidden',
-    borderRadius: '18px',
-    color: '#fff'
-  },
-
-  previewCover: {
-    width: '100%',
-    height: '150px',
-    objectFit: 'cover',
-    display: 'block'
-  },
-
-  previewContent: {
-    padding: '22px'
-  },
-
-  previewLogo: {
-    width: '70px',
-    height: '70px',
-    objectFit: 'contain',
-    background: '#fff',
-    borderRadius: '14px',
-    padding: '5px',
-    display: 'block',
-    marginBottom: '15px'
-  },
-
-  previewButton: {
-    border: 0,
-    padding: '12px 18px',
-    borderRadius: '10px',
-    color: '#fff',
-    fontWeight: '800'
-  },
-
-  moneyField: {
-    display: 'flex',
-    alignItems: 'center',
-    border: '1px solid #d1d5db',
-    borderRadius: '11px',
-    overflow: 'hidden',
-    background: '#fff'
-  },
-
-  moneyPrefix: {
-    padding: '14px',
-    background: '#f3f4f6',
-    color: '#374151',
-    fontWeight: '800',
-    borderRight: '1px solid #d1d5db'
-  },
-
-  moneyInput: {
-    width: '100%',
-    border: 0,
-    outline: 'none',
-    padding: '14px',
-    fontSize: '16px'
-  },
-
-  infoPreview: {
-    display: 'grid',
-    gap: '14px',
-    background: '#f9fafb',
+  logoEditor: {
+    background: '#f8fafc',
     border: '1px solid #e5e7eb',
-    borderRadius: '16px',
-    padding: '18px'
+    borderRadius: '20px',
+    padding: '20px',
+    display: 'grid',
+    gap: '20px'
   },
 
-  infoRow: {
+  logoEditorTop: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '20px',
-    paddingTop: '10px',
-    borderTop: '1px solid #e5e7eb'
-  }
-};
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '12px'
+  },
+
+  logoEditorTitle: {
+    display: 'block',
+    fontSize: '18px'
+  },
+
+  logoCropArea: {
+    width: '240px',
+    height: '240px',
+    maxWidth: '100%',
+    margin: '0 auto',
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: '28px',
+    background:
+      'linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)',
+    backgroundSize: '22px 22px',
+    backgroundPosition:
+      '0 0, 0 11px, 11px -11px, -11px 0px',
+    boxShadow:
+      '0 15px 35px rgba(17, 24, 39, 0.12)',
+    isolation: 'isolate'
+  },
+
+  logoCropGlow: {
+    position: 'absolute',
+    inset: 0,
+    background:
+      'radial-gradient(circle at center, rgba(109,93,252,0.08), transparent 70%)',
+    pointerEvents: 'none',
+    zIndex: 1
+  },
+
+  logoAdjustable: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    objectPosition: 'center',
+    transformOrigin: 'center center',
+    userSelect: 'none',
+    pointerEvents: 'none',
+    zIndex: 2
+  },
+
+  logoCropBorder: {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '28px',
+    border: '3px solid #6d5dfc',
+    boxShadow:
+      'inset
