@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -11,73 +11,201 @@ const supabase = createClient(
 
 export default function CardapioPublico() {
   const params = useParams();
-  const slug = params.slug;
+  const slug = params?.slug;
 
   const [restaurante, setRestaurante] = useState(null);
   const [categorias, setCategorias] = useState([]);
   const [produtos, setProdutos] = useState([]);
+  const [gruposAdicionais, setGruposAdicionais] = useState([]);
+  const [adicionais, setAdicionais] = useState([]);
+
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
 
-  useEffect(() => {
-    if (slug) carregarCardapio();
-  }, [slug]);
+  const [produtoAberto, setProdutoAberto] = useState(null);
+  const [selecionados, setSelecionados] = useState({});
 
-  async function carregarCardapio() {
-    setCarregando(true);
-    setErro('');
+  const carregarCardapio = useCallback(
+    async (mostrarLoading = true) => {
+      if (!slug) return;
 
-    try {
-      const { data: restaurantData, error: restaurantError } =
-        await supabase
+      if (mostrarLoading) {
+        setCarregando(true);
+      }
+
+      setErro('');
+
+      try {
+        const {
+          data: restaurantData,
+          error: restaurantError
+        } = await supabase
           .from('restaurants')
           .select('*')
           .eq('slug', slug)
           .in('status', ['demo', 'active'])
           .maybeSingle();
 
-      if (restaurantError) throw restaurantError;
+        if (restaurantError) {
+          throw restaurantError;
+        }
 
-      if (!restaurantData) {
-        setRestaurante(null);
-        setCarregando(false);
-        return;
-      }
+        if (!restaurantData) {
+          setRestaurante(null);
+          setCategorias([]);
+          setProdutos([]);
+          setGruposAdicionais([]);
+          setAdicionais([]);
+          return;
+        }
 
-      const { data: categoryData, error: categoryError } =
-        await supabase
+        const {
+          data: categoryData,
+          error: categoryError
+        } = await supabase
           .from('categories')
           .select('*')
           .eq('restaurant_id', restaurantData.id)
           .eq('active', true)
-          .order('sort_order', { ascending: true });
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: true });
 
-      if (categoryError) throw categoryError;
+        if (categoryError) {
+          throw categoryError;
+        }
 
-      const { data: productData, error: productError } =
-        await supabase
+        const {
+          data: productData,
+          error: productError
+        } = await supabase
           .from('products')
           .select('*')
           .eq('restaurant_id', restaurantData.id)
           .eq('active', true)
-          .order('sort_order', { ascending: true });
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: true });
 
-      if (productError) throw productError;
+        if (productError) {
+          throw productError;
+        }
 
-      setRestaurante(restaurantData);
-      setCategorias(categoryData || []);
-      setProdutos(productData || []);
-    } catch (error) {
-      console.error(error);
+        const listaProdutos = productData || [];
 
-      setErro(
-        error?.message ||
-          'Não foi possível carregar o cardápio.'
-      );
+        const idsProdutos = listaProdutos.map(
+          (produto) => produto.id
+        );
+
+        let groupData = [];
+        let addonData = [];
+
+        if (idsProdutos.length > 0) {
+          const {
+            data: grupos,
+            error: groupError
+          } = await supabase
+            .from('addon_groups')
+            .select('*')
+            .in('product_id', idsProdutos)
+            .order('sort_order', { ascending: true });
+
+          if (groupError) {
+            console.error(
+              'Erro ao carregar grupos:',
+              groupError
+            );
+          } else {
+            groupData = grupos || [];
+          }
+
+          const idsGrupos = groupData.map(
+            (grupo) => grupo.id
+          );
+
+          if (idsGrupos.length > 0) {
+            const {
+              data: itens,
+              error: addonError
+            } = await supabase
+              .from('addons')
+              .select('*')
+              .in('group_id', idsGrupos)
+              .eq('active', true)
+              .order('sort_order', { ascending: true });
+
+            if (addonError) {
+              console.error(
+                'Erro ao carregar adicionais:',
+                addonError
+              );
+            } else {
+              addonData = itens || [];
+            }
+          }
+        }
+
+        setRestaurante(restaurantData);
+        setCategorias(categoryData || []);
+        setProdutos(listaProdutos);
+        setGruposAdicionais(groupData);
+        setAdicionais(addonData);
+      } catch (error) {
+        console.error(error);
+
+        setErro(
+          error?.message ||
+            'Não foi possível carregar o cardápio.'
+        );
+      } finally {
+        if (mostrarLoading) {
+          setCarregando(false);
+        }
+      }
+    },
+    [slug]
+  );
+
+  useEffect(() => {
+    carregarCardapio(true);
+  }, [carregarCardapio]);
+
+  /*
+   * Atualiza quando o cliente volta para a aba.
+   * Isso evita continuar mostrando dados antigos
+   * depois de editar o restaurante.
+   */
+  useEffect(() => {
+    function atualizarAoVoltar() {
+      if (document.visibilityState === 'visible') {
+        carregarCardapio(false);
+      }
     }
 
-    setCarregando(false);
-  }
+    function atualizarNoFoco() {
+      carregarCardapio(false);
+    }
+
+    document.addEventListener(
+      'visibilitychange',
+      atualizarAoVoltar
+    );
+
+    window.addEventListener(
+      'focus',
+      atualizarNoFoco
+    );
+
+    return () => {
+      document.removeEventListener(
+        'visibilitychange',
+        atualizarAoVoltar
+      );
+
+      window.removeEventListener(
+        'focus',
+        atualizarNoFoco
+      );
+    };
+  }, [carregarCardapio]);
 
   const produtosSemCategoria = useMemo(() => {
     return produtos.filter(
@@ -86,10 +214,13 @@ export default function CardapioPublico() {
   }, [produtos]);
 
   function dinheiro(valor) {
-    return Number(valor || 0).toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    });
+    return Number(valor || 0).toLocaleString(
+      'pt-BR',
+      {
+        style: 'currency',
+        currency: 'BRL'
+      }
+    );
   }
 
   function scrollCategoria(id) {
@@ -101,33 +232,198 @@ export default function CardapioPublico() {
       });
   }
 
+  function abrirProduto(produto) {
+    const grupos = gruposAdicionais.filter(
+      (grupo) => grupo.product_id === produto.id
+    );
+
+    if (!grupos.length) {
+      alert(
+        `"${produto.name}" foi selecionado. O carrinho será a próxima etapa.`
+      );
+
+      return;
+    }
+
+    setProdutoAberto(produto);
+    setSelecionados({});
+  }
+
+  function fecharProduto() {
+    setProdutoAberto(null);
+    setSelecionados({});
+  }
+
+  function gruposDoProduto(produtoId) {
+    return gruposAdicionais.filter(
+      (grupo) => grupo.product_id === produtoId
+    );
+  }
+
+  function adicionaisDoGrupo(grupoId) {
+    return adicionais.filter(
+      (item) => item.group_id === grupoId
+    );
+  }
+
+  function adicionalSelecionado(grupoId, adicionalId) {
+    const lista = selecionados[grupoId] || [];
+
+    return lista.includes(adicionalId);
+  }
+
+  function alternarAdicional(grupo, adicional) {
+    setSelecionados((atual) => {
+      const listaAtual = atual[grupo.id] || [];
+
+      const existe = listaAtual.includes(
+        adicional.id
+      );
+
+      if (existe) {
+        return {
+          ...atual,
+          [grupo.id]: listaAtual.filter(
+            (id) => id !== adicional.id
+          )
+        };
+      }
+
+      const maximo = Math.max(
+        1,
+        Number(grupo.max_select) || 1
+      );
+
+      if (maximo === 1) {
+        return {
+          ...atual,
+          [grupo.id]: [adicional.id]
+        };
+      }
+
+      if (listaAtual.length >= maximo) {
+        return atual;
+      }
+
+      return {
+        ...atual,
+        [grupo.id]: [
+          ...listaAtual,
+          adicional.id
+        ]
+      };
+    });
+  }
+
+  function confirmarProduto() {
+    if (!produtoAberto) return;
+
+    const grupos =
+      gruposDoProduto(produtoAberto.id);
+
+    const grupoPendente = grupos.find(
+      (grupo) => {
+        if (!grupo.required) return false;
+
+        const quantidade =
+          (selecionados[grupo.id] || []).length;
+
+        const minimo = Math.max(
+          1,
+          Number(grupo.min_select) || 1
+        );
+
+        return quantidade < minimo;
+      }
+    );
+
+    if (grupoPendente) {
+      alert(
+        `Escolha uma opção em "${grupoPendente.name}".`
+      );
+
+      return;
+    }
+
+    alert(
+      `"${produtoAberto.name}" configurado. Na próxima etapa vamos ligar isso ao carrinho.`
+    );
+
+    fecharProduto();
+  }
+
+  const totalModal = useMemo(() => {
+    if (!produtoAberto) return 0;
+
+    let total = Number(
+      produtoAberto.price || 0
+    );
+
+    Object.values(selecionados)
+      .flat()
+      .forEach((id) => {
+        const adicional = adicionais.find(
+          (item) => item.id === id
+        );
+
+        if (adicional) {
+          total += Number(
+            adicional.price || 0
+          );
+        }
+      });
+
+    return total;
+  }, [
+    produtoAberto,
+    selecionados,
+    adicionais
+  ]);
+
   if (carregando) {
     return (
       <main className="loading">
-        <div className="loaderPlate">🍽️</div>
-        <strong>Preparando o cardápio...</strong>
+        <div className="loaderPlate">
+          🍽️
+        </div>
+
+        <strong>
+          Preparando o cardápio...
+        </strong>
 
         <style jsx>{`
           .loading {
             min-height: 100vh;
             background: #090a0d;
             color: white;
+
             display: flex;
             flex-direction: column;
+
             align-items: center;
             justify-content: center;
+
             gap: 18px;
-            font-family: Arial, sans-serif;
+
+            font-family:
+              Arial,
+              sans-serif;
           }
 
           .loaderPlate {
             font-size: 50px;
-            animation: pulse 1.5s infinite;
+
+            animation:
+              pulse
+              1.5s
+              infinite;
           }
 
           @keyframes pulse {
             50% {
-              transform: scale(1.12);
+              transform:
+                scale(1.12);
+
               opacity: 0.65;
             }
           }
@@ -140,27 +436,42 @@ export default function CardapioPublico() {
     return (
       <main className="notFound">
         <div>
-          <div className="notFoundIcon">🍽️</div>
+          <div className="notFoundIcon">
+            🍽️
+          </div>
 
-          <h1>Cardápio não encontrado</h1>
+          <h1>
+            Cardápio não encontrado
+          </h1>
 
           <p>
             Este restaurante não está disponível.
           </p>
 
-          {erro && <small>{erro}</small>}
+          {erro && (
+            <small>
+              {erro}
+            </small>
+          )}
         </div>
 
         <style jsx>{`
           .notFound {
             min-height: 100vh;
+
             display: grid;
             place-items: center;
+
             text-align: center;
+
             background: #090a0d;
             color: white;
+
             padding: 30px;
-            font-family: Arial, sans-serif;
+
+            font-family:
+              Arial,
+              sans-serif;
           }
 
           .notFoundIcon {
@@ -176,10 +487,24 @@ export default function CardapioPublico() {
   }
 
   const primaria =
-    restaurante.primary_color || '#c89a55';
+    restaurante.primary_color ||
+    '#6d5dfc';
 
   const secundaria =
-    restaurante.secondary_color || '#111827';
+    restaurante.secondary_color ||
+    '#111827';
+
+  const logoZoom = Number(
+    restaurante.logo_zoom ?? 1
+  );
+
+  const logoPositionX = Number(
+    restaurante.logo_position_x ?? 50
+  );
+
+  const logoPositionY = Number(
+    restaurante.logo_position_y ?? 50
+  );
 
   return (
     <main
@@ -197,7 +522,29 @@ export default function CardapioPublico() {
       <div className="smoke smoke3" />
 
       <div className="menu">
-        <header className="header">
+
+        {/* CAPA */}
+
+        {restaurante.cover_url && (
+          <div className="cover">
+            <img
+              src={restaurante.cover_url}
+              alt={`Capa ${restaurante.name}`}
+            />
+
+            <div className="coverShade" />
+          </div>
+        )}
+
+        {/* CABEÇALHO */}
+
+        <header
+          className={`header ${
+            restaurante.cover_url
+              ? 'withCover'
+              : ''
+          }`}
+        >
           <div className="brand">
 
             {restaurante.logo_url ? (
@@ -209,6 +556,12 @@ export default function CardapioPublico() {
                   src={restaurante.logo_url}
                   alt={`Logo ${restaurante.name}`}
                   className="logo"
+                  style={{
+                    left: `${logoPositionX}%`,
+                    top: `${logoPositionY}%`,
+                    transform:
+                      `translate(-50%, -50%) scale(${logoZoom})`
+                  }}
                 />
 
               </div>
@@ -242,6 +595,8 @@ export default function CardapioPublico() {
 
           <div className="goldLine" />
         </header>
+
+        {/* INFORMAÇÕES */}
 
         <section className="restaurantDetails">
 
@@ -321,31 +676,38 @@ export default function CardapioPublico() {
 
         </section>
 
+        {/* CATEGORIAS */}
+
         {categorias.length > 0 && (
           <nav className="categoryNav">
 
-            {categorias.map((categoria) => (
-
-              <button
-                key={categoria.id}
-                type="button"
-                onClick={() =>
-                  scrollCategoria(categoria.id)
-                }
-              >
-                {categoria.name}
-              </button>
-
-            ))}
+            {categorias.map(
+              (categoria) => (
+                <button
+                  key={categoria.id}
+                  type="button"
+                  onClick={() =>
+                    scrollCategoria(
+                      categoria.id
+                    )
+                  }
+                >
+                  {categoria.name}
+                </button>
+              )
+            )}
 
           </nav>
         )}
 
-        {produtos.length === 0 ? (
+        {/* PRODUTOS */}
 
+        {produtos.length === 0 ? (
           <section className="empty">
 
-            <div>🍽️</div>
+            <div>
+              🍽️
+            </div>
 
             <h2>
               Nosso menu está sendo preparado
@@ -356,14 +718,11 @@ export default function CardapioPublico() {
             </p>
 
           </section>
-
         ) : (
-
           <section className="content">
 
             {categorias.map(
               (categoria, index) => {
-
                 const itens =
                   produtos.filter(
                     (produto) =>
@@ -382,27 +741,29 @@ export default function CardapioPublico() {
                     produtos={itens}
                     dinheiro={dinheiro}
                     index={index}
+                    abrirProduto={abrirProduto}
                   />
                 );
               }
             )}
 
-            {produtosSemCategoria.length > 0 && (
-
+            {produtosSemCategoria.length >
+              0 && (
               <Categoria
                 categoria={{
                   id: 'outros',
                   name: 'Outros'
                 }}
-                produtos={produtosSemCategoria}
+                produtos={
+                  produtosSemCategoria
+                }
                 dinheiro={dinheiro}
                 index={categorias.length}
+                abrirProduto={abrirProduto}
               />
-
             )}
 
           </section>
-
         )}
 
         <footer>
@@ -420,6 +781,197 @@ export default function CardapioPublico() {
         </footer>
 
       </div>
+
+      {/* MODAL DE ADICIONAIS */}
+
+      {produtoAberto && (
+        <div
+          className="modalOverlay"
+          onClick={fecharProduto}
+        >
+          <div
+            className="modal"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+            <div className="modalHandle" />
+
+            <div className="modalTop">
+
+              <div>
+                <span className="modalLabel">
+                  PERSONALIZE SEU PEDIDO
+                </span>
+
+                <h2>
+                  {produtoAberto.name}
+                </h2>
+
+                <strong className="modalPrice">
+                  {dinheiro(
+                    produtoAberto.price
+                  )}
+                </strong>
+              </div>
+
+              <button
+                type="button"
+                className="close"
+                onClick={fecharProduto}
+              >
+                ×
+              </button>
+
+            </div>
+
+            <div className="addonGroups">
+
+              {gruposDoProduto(
+                produtoAberto.id
+              ).map((grupo) => {
+
+                const itens =
+                  adicionaisDoGrupo(
+                    grupo.id
+                  );
+
+                if (!itens.length) {
+                  return null;
+                }
+
+                return (
+                  <section
+                    className="addonGroup"
+                    key={grupo.id}
+                  >
+
+                    <div className="addonGroupHeader">
+
+                      <div>
+                        <h3>
+                          {grupo.name}
+                        </h3>
+
+                        <small>
+                          {grupo.required
+                            ? 'Obrigatório'
+                            : 'Opcional'}
+
+                          {' • '}
+
+                          Escolha até{' '}
+
+                          {grupo.max_select ||
+                            1}
+                        </small>
+                      </div>
+
+                      {grupo.required && (
+                        <span className="required">
+                          OBRIGATÓRIO
+                        </span>
+                      )}
+
+                    </div>
+
+                    <div className="addonList">
+
+                      {itens.map(
+                        (adicional) => {
+
+                          const marcado =
+                            adicionalSelecionado(
+                              grupo.id,
+                              adicional.id
+                            );
+
+                          return (
+                            <button
+                              type="button"
+                              key={
+                                adicional.id
+                              }
+                              className={`addonItem ${
+                                marcado
+                                  ? 'selected'
+                                  : ''
+                              }`}
+                              onClick={() =>
+                                alternarAdicional(
+                                  grupo,
+                                  adicional
+                                )
+                              }
+                            >
+
+                              <div>
+                                <strong>
+                                  {
+                                    adicional.name
+                                  }
+                                </strong>
+
+                                <span>
+                                  {Number(
+                                    adicional.price ||
+                                      0
+                                  ) === 0
+                                    ? 'Sem acréscimo'
+                                    : `+ ${dinheiro(
+                                        adicional.price
+                                      )}`}
+                                </span>
+                              </div>
+
+                              <span className="check">
+                                {marcado
+                                  ? '✓'
+                                  : '+'}
+                              </span>
+
+                            </button>
+                          );
+                        }
+                      )}
+
+                    </div>
+
+                  </section>
+                );
+              })}
+
+            </div>
+
+            <div className="modalFooter">
+
+              <div className="total">
+
+                <small>
+                  TOTAL
+                </small>
+
+                <strong>
+                  {dinheiro(totalModal)}
+                </strong>
+
+              </div>
+
+              <button
+                type="button"
+                className="confirm"
+                onClick={
+                  confirmarProduto
+                }
+              >
+                Adicionar ao pedido
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         * {
@@ -481,6 +1033,7 @@ export default function CardapioPublico() {
             sans-serif;
 
           position: relative;
+
           overflow: hidden;
         }
 
@@ -492,6 +1045,7 @@ export default function CardapioPublico() {
           margin: 0 auto;
 
           position: relative;
+
           z-index: 5;
 
           padding-bottom: 40px;
@@ -515,13 +1069,50 @@ export default function CardapioPublico() {
         .lightOne {
           top: 5%;
           left: -180px;
-          background: var(--primary);
+
+          background:
+            var(--primary);
         }
 
         .lightTwo {
           bottom: 5%;
           right: -180px;
-          background: var(--primary);
+
+          background:
+            var(--primary);
+        }
+
+        /* CAPA */
+
+        .cover {
+          height: 250px;
+
+          position: relative;
+
+          overflow: hidden;
+        }
+
+        .cover img {
+          width: 100%;
+          height: 100%;
+
+          object-fit: cover;
+
+          display: block;
+        }
+
+        .coverShade {
+          position: absolute;
+
+          inset: 0;
+
+          background:
+            linear-gradient(
+              180deg,
+              rgba(0, 0, 0, 0.1),
+              rgba(8, 9, 12, 0.3) 45%,
+              #08090c 100%
+            );
         }
 
         /* FUMAÇA */
@@ -535,7 +1126,12 @@ export default function CardapioPublico() {
           border-radius: 50%;
 
           background:
-            rgba(255, 255, 255, 0.035);
+            rgba(
+              255,
+              255,
+              255,
+              0.035
+            );
 
           filter: blur(55px);
 
@@ -549,7 +1145,10 @@ export default function CardapioPublico() {
           bottom: -120px;
 
           animation:
-            smokeUp 15s linear infinite;
+            smokeUp
+            15s
+            linear
+            infinite;
         }
 
         .smoke2 {
@@ -557,7 +1156,11 @@ export default function CardapioPublico() {
           bottom: -160px;
 
           animation:
-            smokeUp 20s linear infinite 4s;
+            smokeUp
+            20s
+            linear
+            infinite
+            4s;
         }
 
         .smoke3 {
@@ -565,11 +1168,14 @@ export default function CardapioPublico() {
           bottom: -200px;
 
           animation:
-            smokeUp 24s linear infinite 8s;
+            smokeUp
+            24s
+            linear
+            infinite
+            8s;
         }
 
         @keyframes smokeUp {
-
           0% {
             transform:
               translateY(200px)
@@ -604,6 +1210,14 @@ export default function CardapioPublico() {
             26px;
         }
 
+        .header.withCover {
+          margin-top: -65px;
+
+          position: relative;
+
+          z-index: 5;
+        }
+
         .brand {
           display: flex;
 
@@ -611,8 +1225,6 @@ export default function CardapioPublico() {
 
           gap: 22px;
         }
-
-        /* LOGO NOVA */
 
         .logoBox {
           width: 118px;
@@ -641,21 +1253,7 @@ export default function CardapioPublico() {
             );
 
           background:
-            radial-gradient(
-              circle at center,
-              color-mix(
-                in srgb,
-                var(--primary) 16%,
-                transparent
-              ),
-              transparent 70%
-            ),
-            rgba(
-              255,
-              255,
-              255,
-              0.035
-            );
+            #111216;
 
           box-shadow:
             0 18px 45px
@@ -691,7 +1289,7 @@ export default function CardapioPublico() {
 
           pointer-events: none;
 
-          z-index: 2;
+          z-index: 4;
         }
 
         .logoGlow {
@@ -710,23 +1308,26 @@ export default function CardapioPublico() {
           opacity: 0.12;
 
           pointer-events: none;
+
+          z-index: 1;
         }
 
         .logo {
+          position: absolute;
+
           width: 100%;
           height: 100%;
 
-          display: block;
-
-          object-fit: cover;
+          object-fit: contain;
 
           object-position: center;
 
-          transform: scale(1.08);
+          transform-origin:
+            center center;
 
-          position: relative;
+          z-index: 2;
 
-          z-index: 1;
+          user-select: none;
         }
 
         .logoFallback {
@@ -760,17 +1361,6 @@ export default function CardapioPublico() {
               var(--primary) 70%,
               white
             );
-
-          box-shadow:
-            0 18px 45px
-              rgba(0, 0, 0, 0.4),
-
-            0 0 28px
-              color-mix(
-                in srgb,
-                var(--primary) 15%,
-                transparent
-              );
         }
 
         .brandText {
@@ -778,18 +1368,22 @@ export default function CardapioPublico() {
         }
 
         .premium {
-          color: var(--primary);
+          color:
+            var(--primary);
 
           font-size: 10px;
 
           font-weight: 800;
 
-          letter-spacing: 2.4px;
+          letter-spacing:
+            2.4px;
         }
 
         .brand h1 {
           margin:
-            7px 0 9px;
+            7px
+            0
+            9px;
 
           font-size:
             clamp(
@@ -849,7 +1443,8 @@ export default function CardapioPublico() {
 
         .restaurantDetails {
           margin:
-            0 28px;
+            0
+            28px;
 
           padding: 15px;
 
@@ -934,7 +1529,7 @@ export default function CardapioPublico() {
           white-space: nowrap;
         }
 
-        /* NAVEGAÇÃO */
+        /* CATEGORIAS */
 
         .categoryNav {
           padding:
@@ -981,24 +1576,14 @@ export default function CardapioPublico() {
             100px;
 
           padding:
-            10px 17px;
+            10px
+            17px;
 
           font-size: 12px;
 
           font-weight: 700;
 
           cursor: pointer;
-
-          transition:
-            0.25s ease;
-        }
-
-        .categoryNav button:hover {
-          border-color:
-            var(--primary);
-
-          color:
-            var(--primary);
         }
 
         .categoryNav button:active {
@@ -1020,7 +1605,8 @@ export default function CardapioPublico() {
 
         .empty {
           margin:
-            50px 28px;
+            50px
+            28px;
 
           text-align: center;
 
@@ -1042,7 +1628,8 @@ export default function CardapioPublico() {
             );
 
           padding:
-            50px 25px;
+            50px
+            25px;
 
           border-radius:
             25px;
@@ -1091,17 +1678,429 @@ export default function CardapioPublico() {
           opacity: 0.35;
         }
 
+        /* MODAL */
+
+        .modalOverlay {
+          position: fixed;
+
+          inset: 0;
+
+          z-index: 9999;
+
+          background:
+            rgba(
+              0,
+              0,
+              0,
+              0.75
+            );
+
+          backdrop-filter:
+            blur(8px);
+
+          display: flex;
+
+          align-items: flex-end;
+
+          justify-content: center;
+
+          padding: 20px;
+        }
+
+        .modal {
+          width: 100%;
+
+          max-width: 620px;
+
+          max-height: 88vh;
+
+          overflow-y: auto;
+
+          background:
+            #111216;
+
+          border:
+            1px solid
+            color-mix(
+              in srgb,
+              var(--primary) 30%,
+              #333
+            );
+
+          border-radius:
+            25px;
+
+          box-shadow:
+            0 -20px 70px
+            rgba(
+              0,
+              0,
+              0,
+              0.6
+            );
+
+          padding: 24px;
+        }
+
+        .modalHandle {
+          display: none;
+
+          width: 45px;
+          height: 4px;
+
+          border-radius: 10px;
+
+          background: #3c3d42;
+
+          margin:
+            0
+            auto
+            18px;
+        }
+
+        .modalTop {
+          display: flex;
+
+          justify-content:
+            space-between;
+
+          gap: 20px;
+
+          align-items:
+            flex-start;
+
+          padding-bottom: 20px;
+
+          border-bottom:
+            1px solid
+            rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
+        }
+
+        .modalLabel {
+          color:
+            var(--primary);
+
+          font-size: 9px;
+
+          font-weight: 900;
+
+          letter-spacing:
+            1.7px;
+        }
+
+        .modalTop h2 {
+          margin:
+            7px
+            0
+            7px;
+
+          font-size: 27px;
+        }
+
+        .modalPrice {
+          color:
+            var(--primary);
+
+          font-size: 19px;
+        }
+
+        .close {
+          width: 38px;
+          height: 38px;
+
+          flex:
+            0 0 38px;
+
+          border: 0;
+
+          border-radius: 50%;
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
+
+          color: white;
+
+          font-size: 25px;
+
+          cursor: pointer;
+        }
+
+        .addonGroups {
+          display: grid;
+
+          gap: 25px;
+
+          padding:
+            25px
+            0;
+        }
+
+        .addonGroup {
+          display: grid;
+
+          gap: 14px;
+        }
+
+        .addonGroupHeader {
+          display: flex;
+
+          justify-content:
+            space-between;
+
+          align-items:
+            flex-start;
+
+          gap: 15px;
+        }
+
+        .addonGroup h3 {
+          margin:
+            0
+            0
+            4px;
+
+          font-size: 17px;
+        }
+
+        .addonGroup small {
+          color: #85878d;
+        }
+
+        .required {
+          flex-shrink: 0;
+
+          color:
+            var(--primary);
+
+          border:
+            1px solid
+            var(--primary);
+
+          padding:
+            5px
+            8px;
+
+          border-radius:
+            100px;
+
+          font-size: 7px;
+
+          font-weight: 900;
+        }
+
+        .addonList {
+          display: grid;
+
+          gap: 9px;
+        }
+
+        .addonItem {
+          width: 100%;
+
+          border:
+            1px solid
+            rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
+
+          background:
+            rgba(
+              255,
+              255,
+              255,
+              0.025
+            );
+
+          color: white;
+
+          border-radius:
+            14px;
+
+          padding:
+            14px;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          gap: 15px;
+
+          text-align: left;
+
+          cursor: pointer;
+        }
+
+        .addonItem.selected {
+          border-color:
+            var(--primary);
+
+          background:
+            color-mix(
+              in srgb,
+              var(--primary) 12%,
+              #111216
+            );
+        }
+
+        .addonItem div {
+          display: grid;
+
+          gap: 4px;
+        }
+
+        .addonItem strong {
+          font-size: 13px;
+        }
+
+        .addonItem span {
+          color: #8d8f95;
+
+          font-size: 11px;
+        }
+
+        .check {
+          width: 27px;
+          height: 27px;
+
+          flex:
+            0 0 27px;
+
+          display: grid;
+
+          place-items: center;
+
+          border-radius: 50%;
+
+          background:
+            var(--primary) !important;
+
+          color:
+            white !important;
+
+          font-size:
+            16px !important;
+
+          font-weight: 900;
+        }
+
+        .modalFooter {
+          position: sticky;
+
+          bottom: -24px;
+
+          margin:
+            0
+            -24px
+            -24px;
+
+          padding: 18px 24px;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          gap: 15px;
+
+          background:
+            rgba(
+              17,
+              18,
+              22,
+              0.96
+            );
+
+          border-top:
+            1px solid
+            rgba(
+              255,
+              255,
+              255,
+              0.08
+            );
+
+          backdrop-filter:
+            blur(15px);
+        }
+
+        .total {
+          display: grid;
+
+          gap: 3px;
+        }
+
+        .total small {
+          color: #777;
+
+          font-size: 8px;
+
+          letter-spacing:
+            1.5px;
+        }
+
+        .total strong {
+          color:
+            var(--primary);
+
+          font-size: 20px;
+        }
+
+        .confirm {
+          border: 0;
+
+          background:
+            var(--primary);
+
+          color: white;
+
+          border-radius:
+            12px;
+
+          padding:
+            14px
+            18px;
+
+          font-weight: 800;
+
+          cursor: pointer;
+        }
+
         /* CELULAR */
 
         @media (
           max-width: 600px
         ) {
+          .cover {
+            height: 190px;
+          }
 
           .header {
             padding:
               35px
               20px
               22px;
+          }
+
+          .header.withCover {
+            margin-top: -55px;
           }
 
           .brand {
@@ -1113,7 +2112,8 @@ export default function CardapioPublico() {
             width: 94px;
             height: 94px;
 
-            flex-basis: 94px;
+            flex-basis:
+              94px;
 
             border-radius:
               23px;
@@ -1122,11 +2122,6 @@ export default function CardapioPublico() {
           .logoBox::before {
             border-radius:
               18px;
-          }
-
-          .logo {
-            transform:
-              scale(1.1);
           }
 
           .logoFallback {
@@ -1146,18 +2141,27 @@ export default function CardapioPublico() {
 
           .restaurantDetails {
             margin:
-              0 20px;
+              0
+              20px;
 
             display: flex;
 
             overflow-x: auto;
 
             padding: 9px;
+
+            scrollbar-width: none;
+          }
+
+          .restaurantDetails::-webkit-scrollbar {
+            display: none;
           }
 
           .detail {
             flex:
-              0 0 auto;
+              0
+              0
+              auto;
 
             min-width: 125px;
           }
@@ -1177,6 +2181,61 @@ export default function CardapioPublico() {
             padding-right:
               20px;
           }
+
+          .modalOverlay {
+            padding: 0;
+
+            align-items:
+              flex-end;
+          }
+
+          .modal {
+            max-height: 92vh;
+
+            border-radius:
+              25px
+              25px
+              0
+              0;
+
+            border-left: 0;
+            border-right: 0;
+            border-bottom: 0;
+
+            padding:
+              15px
+              20px
+              20px;
+          }
+
+          .modalHandle {
+            display: block;
+          }
+
+          .modalTop h2 {
+            font-size: 22px;
+          }
+
+          .modalFooter {
+            bottom: -20px;
+
+            margin:
+              0
+              -20px
+              -20px;
+
+            padding:
+              15px
+              20px;
+          }
+
+          .confirm {
+            padding:
+              13px
+              15px;
+
+            font-size: 12px;
+          }
         }
       `}</style>
     </main>
@@ -1187,7 +2246,8 @@ function Categoria({
   categoria,
   produtos,
   dinheiro,
-  index
+  index,
+  abrirProduto
 }) {
   return (
     <section
@@ -1198,7 +2258,6 @@ function Categoria({
           `${index * 0.08}s`
       }}
     >
-
       <div className="categoryHeader">
 
         <div>
@@ -1224,14 +2283,13 @@ function Categoria({
 
         {produtos.map(
           (produto, productIndex) => (
-
             <Produto
               key={produto.id}
               produto={produto}
               dinheiro={dinheiro}
               index={productIndex}
+              abrirProduto={abrirProduto}
             />
-
           )
         )}
 
@@ -1254,7 +2312,6 @@ function Categoria({
         }
 
         @keyframes revealCategory {
-
           from {
             opacity: 0;
 
@@ -1297,7 +2354,8 @@ function Categoria({
 
           font-weight: 800;
 
-          letter-spacing: 2px;
+          letter-spacing:
+            2px;
 
           margin-bottom: 5px;
         }
@@ -1344,19 +2402,15 @@ function Categoria({
         @media (
           max-width: 600px
         ) {
-
           .category {
-            padding-top:
-              35px;
+            padding-top: 35px;
           }
 
           h2 {
-            font-size:
-              24px;
+            font-size: 24px;
           }
         }
       `}</style>
-
     </section>
   );
 }
@@ -1364,7 +2418,8 @@ function Categoria({
 function Produto({
   produto,
   dinheiro,
-  index
+  index,
+  abrirProduto
 }) {
   const [tocando, setTocando] =
     useState(false);
@@ -1376,9 +2431,7 @@ function Produto({
       setTocando(false);
     }, 300);
 
-    alert(
-      `Próxima etapa: vamos adicionar "${produto.name}" ao carrinho.`
-    );
+    abrirProduto(produto);
   }
 
   return (
@@ -1391,9 +2444,7 @@ function Produto({
           `${index * 0.07}s`
       }}
     >
-
       {produto.image_url && (
-
         <div className="imageSide">
 
           <img
@@ -1404,26 +2455,21 @@ function Produto({
           <div className="imageShade" />
 
           {produto.featured && (
-
             <span className="featured">
               ★ DESTAQUE
             </span>
-
           )}
 
         </div>
-
       )}
 
       <div className="info">
 
         {produto.featured &&
           !produto.image_url && (
-
             <span className="featuredText">
               ★ DESTAQUE
             </span>
-
           )}
 
         <div className="titleRow">
@@ -1443,18 +2489,15 @@ function Produto({
         </div>
 
         {produto.description && (
-
           <p>
             {produto.description}
           </p>
-
         )}
 
         <button
           type="button"
           onClick={clicar}
         >
-
           <span>
             Adicionar
           </span>
@@ -1462,7 +2505,6 @@ function Produto({
           <span className="plus">
             +
           </span>
-
         </button>
 
       </div>
@@ -1522,14 +2564,6 @@ function Produto({
                 0,
                 0,
                 0.28
-              ),
-
-            inset 0 1px 0
-              rgba(
-                255,
-                255,
-                255,
-                0.04
               );
 
           opacity: 0;
@@ -1544,13 +2578,10 @@ function Produto({
             transform
               0.28s ease,
             border-color
-              0.28s ease,
-            box-shadow
               0.28s ease;
         }
 
         @keyframes revealProduct {
-
           from {
             opacity: 0;
 
@@ -1566,30 +2597,6 @@ function Produto({
               translateY(0)
               scale(1);
           }
-        }
-
-        .product:hover {
-          transform:
-            translateY(-3px);
-
-          border-color:
-            var(--primary);
-
-          box-shadow:
-            0 22px 55px
-              rgba(
-                0,
-                0,
-                0,
-                0.38
-              ),
-
-            0 0 25px
-              color-mix(
-                in srgb,
-                var(--primary) 9%,
-                transparent
-              );
         }
 
         .product.touch {
@@ -1616,16 +2623,6 @@ function Produto({
           height: 100%;
 
           object-fit: cover;
-
-          transition:
-            transform
-            0.6s ease;
-        }
-
-        .product:hover
-        .imageSide img {
-          transform:
-            scale(1.045);
         }
 
         .imageShade {
@@ -1669,11 +2666,9 @@ function Produto({
           color:
             var(--primary);
 
-          backdrop-filter:
-            blur(10px);
-
           padding:
-            7px 10px;
+            7px
+            10px;
 
           border-radius:
             100px;
@@ -1796,8 +2791,7 @@ function Produto({
 
           display: flex;
 
-          align-items:
-            center;
+          align-items: center;
 
           justify-content:
             space-between;
@@ -1809,24 +2803,6 @@ function Produto({
           font-weight: 800;
 
           cursor: pointer;
-
-          transition:
-            0.25s ease;
-        }
-
-        button:hover {
-          background:
-            var(--primary);
-
-          color: white;
-
-          transform:
-            translateY(-2px);
-        }
-
-        button:active {
-          transform:
-            scale(0.95);
         }
 
         .plus {
@@ -1849,16 +2825,6 @@ function Produto({
           line-height: 1;
         }
 
-        button:hover .plus {
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.2
-            );
-        }
-
         .featuredText {
           color:
             var(--primary);
@@ -1870,8 +2836,7 @@ function Produto({
           letter-spacing:
             1.5px;
 
-          margin-bottom:
-            10px;
+          margin-bottom: 10px;
         }
 
         .cardGlow {
@@ -1893,14 +2858,12 @@ function Produto({
 
           opacity: 0.06;
 
-          pointer-events:
-            none;
+          pointer-events: none;
         }
 
         @media (
           max-width: 600px
         ) {
-
           .product {
             min-height: 160px;
 
@@ -1913,8 +2876,7 @@ function Produto({
           }
 
           .imageSide {
-            min-height:
-              160px;
+            min-height: 160px;
           }
 
           .info {
@@ -1932,21 +2894,17 @@ function Produto({
           }
 
           h3 {
-            font-size:
-              17px;
+            font-size: 17px;
 
-            margin-bottom:
-              7px;
+            margin-bottom: 7px;
           }
 
           .titleRow strong {
-            font-size:
-              16px;
+            font-size: 16px;
           }
 
           p {
-            font-size:
-              10px;
+            font-size: 10px;
 
             margin:
               8px
@@ -1956,19 +2914,16 @@ function Produto({
             display:
               -webkit-box;
 
-            -webkit-line-clamp:
-              2;
+            -webkit-line-clamp: 2;
 
             -webkit-box-orient:
               vertical;
 
-            overflow:
-              hidden;
+            overflow: hidden;
           }
 
           button {
-            min-width:
-              105px;
+            min-width: 105px;
 
             padding:
               8px
@@ -1976,8 +2931,7 @@ function Produto({
               8px
               12px;
 
-            font-size:
-              10px;
+            font-size: 10px;
 
             gap: 10px;
           }
@@ -1988,7 +2942,7 @@ function Produto({
           }
         }
       `}</style>
-
     </article>
   );
-          }
+        }
+Atualiza cardápio público
