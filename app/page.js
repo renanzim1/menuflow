@@ -32,7 +32,8 @@ export default function Home() {
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error(error);
+      console.error('SUPABASE ERROR:', error);
+alert(error.message);
       setErro('Não foi possível carregar os restaurantes.');
       setCarregando(false);
       return;
