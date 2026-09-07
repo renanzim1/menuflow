@@ -242,9 +242,14 @@ alert(error.message);
                   </div>
 
                   <div className="actions">
-                    <button className="edit">
-                      Editar
-                    </button>
+                    <button
+  className="edit"
+  onClick={() => {
+    window.location.href = `/restaurante/${restaurante.id}`;
+  }}
+>
+  Editar
+</button>
 
                     <button>
                       Visualizar
