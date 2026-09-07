@@ -2945,4 +2945,3 @@ function Produto({
     </article>
   );
         }
-Atualiza cardápio público
