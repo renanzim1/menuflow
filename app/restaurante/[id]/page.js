@@ -168,35 +168,66 @@ export default function EditorRestaurante() {
   }
 
   async function uploadFoto(file) {
-    if (!file) return null;
+  if (!file) return null;
 
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error('A imagem deve ter no máximo 5 MB.');
-    }
+  const limite = 5 * 1024 * 1024;
 
-    const extensao =
-      file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  if (file.size > limite) {
+    throw new Error('A imagem deve ter no máximo 5 MB.');
+  }
 
-    const nomeArquivo =
-      `${id}/${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}.${extensao}`;
+  const tiposPermitidos = [
+    'image/jpeg',
+    'image/png',
+    'image/webp'
+  ];
 
-    const { error } = await supabase.storage
+  if (!tiposPermitidos.includes(file.type)) {
+    throw new Error(
+      'Formato inválido. Use JPG, PNG ou WebP.'
+    );
+  }
+
+  const extensao =
+    file.type === 'image/png'
+      ? 'png'
+      : file.type === 'image/webp'
+      ? 'webp'
+      : 'jpg';
+
+  const nomeArquivo =
+    `${id}/${crypto.randomUUID()}.${extensao}`;
+
+  const arrayBuffer = await file.arrayBuffer();
+
+  const { data: uploadData, error: uploadError } =
+    await supabase.storage
       .from('product-images')
-      .upload(nomeArquivo, file, {
+      .upload(nomeArquivo, arrayBuffer, {
+        contentType: file.type,
         cacheControl: '3600',
         upsert: false
       });
 
-    if (error) throw error;
-
-    const { data } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(nomeArquivo);
-
-    return data.publicUrl;
+  if (uploadError) {
+    console.error('ERRO UPLOAD:', uploadError);
+    throw new Error(
+      `Falha ao enviar foto: ${uploadError.message}`
+    );
   }
+
+  const { data: publicData } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(uploadData.path);
+
+  if (!publicData?.publicUrl) {
+    throw new Error(
+      'A foto foi enviada, mas não foi possível gerar a URL.'
+    );
+  }
+
+  return publicData.publicUrl;
+}
 
   async function criarProduto(e) {
     e.preventDefault();
