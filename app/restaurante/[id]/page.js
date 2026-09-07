@@ -38,6 +38,10 @@ const [maxSelecoes, setMaxSelecoes] = useState('1');
 const [grupoSelecionado, setGrupoSelecionado] = useState('');
 const [nomeAdicional, setNomeAdicional] = useState('');
 const [precoAdicional, setPrecoAdicional] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+const [coverUrl, setCoverUrl] = useState('');
+const [corPrimaria, setCorPrimaria] = useState('#6d5dfc');
+const [corSecundaria, setCorSecundaria] = useState('#111827');
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -130,6 +134,10 @@ if (idsProdutos.length > 0) {
 }
 
 setGruposAdicionais(groupData);
+    setLogoUrl(restaurantData.logo_url || '');
+setCoverUrl(restaurantData.cover_url || '');
+setCorPrimaria(restaurantData.primary_color || '#6d5dfc');
+setCorSecundaria(restaurantData.secondary_color || '#111827');
 setAdicionais(addonData);
     setRestaurante(restaurantData);
     setCategorias(categoryData || []);
@@ -514,7 +522,35 @@ async function excluirAdicional(adicional) {
     atual.filter((item) => item.id !== adicional.id)
   );
 }
+async function salvarAparencia() {
+  if (salvando) return;
 
+  setSalvando(true);
+  setErro('');
+
+  const { data, error } = await supabase
+    .from('restaurants')
+    .update({
+      logo_url: logoUrl || null,
+      cover_url: coverUrl || null,
+      primary_color: corPrimaria,
+      secondary_color: corSecundaria,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    setErro(`Erro: ${error.message}`);
+    setSalvando(false);
+    return;
+  }
+
+  setRestaurante(data);
+  setSalvando(false);
+  alert('Aparência salva com sucesso!');
+}
   function dinheiro(valor) {
     return Number(valor || 0).toLocaleString('pt-BR', {
       style: 'currency',
@@ -542,7 +578,128 @@ async function excluirAdicional(adicional) {
       </main>
     );
   }
+if (tela === 'aparencia') {
+  return (
+    <main style={styles.page}>
+      <section style={styles.container}>
+        <button
+          style={styles.back}
+          onClick={voltarEditor}
+        >
+          ← Voltar ao editor
+        </button>
 
+        <p style={styles.eyebrow}>
+          {restaurante.name.toUpperCase()}
+        </p>
+
+        <h1 style={styles.title}>Aparência</h1>
+
+        <p style={styles.subtitle}>
+          Personalize a identidade visual do seu cardápio.
+        </p>
+
+        <div style={styles.productForm}>
+          <label style={styles.label}>
+            URL da logo
+            <input
+              style={styles.input}
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </label>
+
+          <label style={styles.label}>
+            URL da imagem de capa
+            <input
+              style={styles.input}
+              value={coverUrl}
+              onChange={(e) => setCoverUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </label>
+
+          <label style={styles.label}>
+            Cor principal
+            <input
+              type="color"
+              value={corPrimaria}
+              onChange={(e) => setCorPrimaria(e.target.value)}
+              style={{
+                width: '100%',
+                height: '55px',
+                border: '1px solid #d1d5db',
+                borderRadius: '11px'
+              }}
+            />
+          </label>
+
+          <label style={styles.label}>
+            Cor secundária
+            <input
+              type="color"
+              value={corSecundaria}
+              onChange={(e) => setCorSecundaria(e.target.value)}
+              style={{
+                width: '100%',
+                height: '55px',
+                border: '1px solid #d1d5db',
+                borderRadius: '11px'
+              }}
+            />
+          </label>
+
+          <div
+            style={{
+              padding: '25px',
+              borderRadius: '16px',
+              background: corSecundaria,
+              color: '#fff'
+            }}
+          >
+            <strong>Prévia do cardápio</strong>
+
+            <p>
+              Veja como as cores da sua marca ficarão.
+            </p>
+
+            <button
+              type="button"
+              style={{
+                border: 0,
+                padding: '12px 18px',
+                borderRadius: '10px',
+                background: corPrimaria,
+                color: '#fff',
+                fontWeight: '800'
+              }}
+            >
+              Adicionar ao pedido
+            </button>
+          </div>
+
+          {erro && (
+            <div style={styles.error}>
+              {erro}
+            </div>
+          )}
+
+          <button
+            style={styles.primary}
+            type="button"
+            onClick={salvarAparencia}
+            disabled={salvando}
+          >
+            {salvando
+              ? 'Salvando...'
+              : 'Salvar aparência'}
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}
   if (tela === 'categorias') {
     return (
       <main style={styles.page}>
@@ -1128,11 +1285,7 @@ async function excluirAdicional(adicional) {
   </small>
 </button>
 
-          <EditorCard
-            icon="🎨"
-            title="Aparência"
-            text="Logo, capa e cores do cardápio."
-          />
+        
 
           <EditorCard
             icon="📱"
@@ -1140,11 +1293,20 @@ async function excluirAdicional(adicional) {
             text="WhatsApp, endereço e entrega."
           />
 
-          <EditorCard
-            icon="👁️"
-            title="Visualizar cardápio"
-            text="Veja como ficará para o cliente."
-          />
+          <button
+  style={styles.card}
+  onClick={() => setTela('aparencia')}
+>
+  <span style={styles.icon}>🎨</span>
+
+  <strong style={styles.cardTitle}>
+    Aparência
+  </strong>
+
+  <small style={styles.cardText}>
+    Logo, capa e cores do cardápio.
+  </small>
+</button>
         </section>
       </section>
     </main>
