@@ -21,10 +21,10 @@ export default function EditorRestaurante() {
 
   const [tela, setTela] = useState('inicio');
 
-  // Categorias
+  // CATEGORIAS
   const [novaCategoria, setNovaCategoria] = useState('');
 
-  // Produtos
+  // PRODUTOS
   const [nomeProduto, setNomeProduto] = useState('');
   const [descricaoProduto, setDescricaoProduto] = useState('');
   const [precoProduto, setPrecoProduto] = useState('');
@@ -32,7 +32,7 @@ export default function EditorRestaurante() {
   const [fotoProduto, setFotoProduto] = useState(null);
   const [destaqueProduto, setDestaqueProduto] = useState(false);
 
-  // Adicionais
+  // ADICIONAIS
   const [produtoAdicional, setProdutoAdicional] = useState('');
   const [nomeGrupo, setNomeGrupo] = useState('');
   const [grupoObrigatorio, setGrupoObrigatorio] = useState(false);
@@ -42,127 +42,168 @@ export default function EditorRestaurante() {
   const [nomeAdicional, setNomeAdicional] = useState('');
   const [precoAdicional, setPrecoAdicional] = useState('');
 
-  // Aparência
+  // APARÊNCIA
   const [logoUrl, setLogoUrl] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
+
   const [logoArquivo, setLogoArquivo] = useState(null);
   const [coverArquivo, setCoverArquivo] = useState(null);
+
   const [logoPreview, setLogoPreview] = useState('');
   const [coverPreview, setCoverPreview] = useState('');
 
   const [corPrimaria, setCorPrimaria] = useState('#6d5dfc');
   const [corSecundaria, setCorSecundaria] = useState('#111827');
 
+  // GERAL
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
   useEffect(() => {
-    if (id) carregarDados();
+    if (id) {
+      carregarDados();
+    }
   }, [id]);
+
+  // ============================================================
+  // CARREGAR DADOS
+  // ============================================================
 
   async function carregarDados() {
     setCarregando(true);
     setErro('');
 
-    const { data: restaurantData, error: restaurantError } =
-      await supabase
+    try {
+      const {
+        data: restaurantData,
+        error: restaurantError
+      } = await supabase
         .from('restaurants')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-    if (restaurantError) {
-      console.error(restaurantError);
-      setErro('Não foi possível carregar o restaurante.');
-      setCarregando(false);
-      return;
-    }
+      if (restaurantError) {
+        throw restaurantError;
+      }
 
-    const { data: categoryData, error: categoryError } =
-      await supabase
+      if (!restaurantData) {
+        setRestaurante(null);
+        setCarregando(false);
+        return;
+      }
+
+      const {
+        data: categoryData,
+        error: categoryError
+      } = await supabase
         .from('categories')
         .select('*')
         .eq('restaurant_id', id)
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
 
-    if (categoryError) console.error(categoryError);
+      if (categoryError) {
+        console.error('Erro categorias:', categoryError);
+      }
 
-    const { data: productData, error: productError } =
-      await supabase
+      const {
+        data: productData,
+        error: productError
+      } = await supabase
         .from('products')
         .select('*')
         .eq('restaurant_id', id)
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
 
-    if (productError) console.error(productError);
+      if (productError) {
+        console.error('Erro produtos:', productError);
+      }
 
-    const idsProdutos = (productData || []).map(
-      (produto) => produto.id
-    );
+      const listaProdutos = productData || [];
 
-    let groupData = [];
-    let addonData = [];
+      const idsProdutos = listaProdutos.map(
+        (produto) => produto.id
+      );
 
-    if (idsProdutos.length > 0) {
-      const { data: grupos, error: groupError } =
-        await supabase
+      let groupData = [];
+      let addonData = [];
+
+      if (idsProdutos.length > 0) {
+        const {
+          data: grupos,
+          error: groupError
+        } = await supabase
           .from('addon_groups')
           .select('*')
           .in('product_id', idsProdutos)
           .order('sort_order', { ascending: true });
 
-      if (groupError) {
-        console.error(groupError);
-      } else {
-        groupData = grupos || [];
-      }
+        if (groupError) {
+          console.error('Erro grupos:', groupError);
+        } else {
+          groupData = grupos || [];
+        }
 
-      const idsGrupos = groupData.map((grupo) => grupo.id);
+        const idsGrupos = groupData.map(
+          (grupo) => grupo.id
+        );
 
-      if (idsGrupos.length > 0) {
-        const { data: itens, error: addonError } =
-          await supabase
+        if (idsGrupos.length > 0) {
+          const {
+            data: itens,
+            error: addonError
+          } = await supabase
             .from('addons')
             .select('*')
             .in('group_id', idsGrupos)
             .order('sort_order', { ascending: true });
 
-        if (addonError) {
-          console.error(addonError);
-        } else {
-          addonData = itens || [];
+          if (addonError) {
+            console.error('Erro adicionais:', addonError);
+          } else {
+            addonData = itens || [];
+          }
         }
       }
+
+      setRestaurante(restaurantData);
+      setCategorias(categoryData || []);
+      setProdutos(listaProdutos);
+      setGruposAdicionais(groupData);
+      setAdicionais(addonData);
+
+      setLogoUrl(restaurantData.logo_url || '');
+      setCoverUrl(restaurantData.cover_url || '');
+
+      setLogoPreview(restaurantData.logo_url || '');
+      setCoverPreview(restaurantData.cover_url || '');
+
+      setCorPrimaria(
+        restaurantData.primary_color || '#6d5dfc'
+      );
+
+      setCorSecundaria(
+        restaurantData.secondary_color || '#111827'
+      );
+    } catch (error) {
+      console.error(error);
+
+      setErro(
+        `Erro ao carregar: ${
+          error?.message || 'erro desconhecido'
+        }`
+      );
     }
-
-    setRestaurante(restaurantData);
-    setCategorias(categoryData || []);
-    setProdutos(productData || []);
-    setGruposAdicionais(groupData);
-    setAdicionais(addonData);
-
-    setLogoUrl(restaurantData.logo_url || '');
-    setCoverUrl(restaurantData.cover_url || '');
-    setLogoPreview(restaurantData.logo_url || '');
-    setCoverPreview(restaurantData.cover_url || '');
-
-    setCorPrimaria(
-      restaurantData.primary_color || '#6d5dfc'
-    );
-
-    setCorSecundaria(
-      restaurantData.secondary_color || '#111827'
-    );
 
     setCarregando(false);
   }
 
-  // =========================
+  // ============================================================
   // CATEGORIAS
-  // =========================
+  // ============================================================
 
   async function criarCategoria(e) {
     e.preventDefault();
@@ -174,25 +215,34 @@ export default function EditorRestaurante() {
     setSalvando(true);
     setErro('');
 
-    const { data, error } = await supabase
-      .from('categories')
-      .insert({
-        restaurant_id: id,
-        name: nome,
-        sort_order: categorias.length,
-        active: true
-      })
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({
+          restaurant_id: id,
+          name: nome,
+          sort_order: categorias.length,
+          active: true
+        })
+        .select()
+        .single();
 
-    if (error) {
-      setErro(`Erro: ${error.message}`);
-      setSalvando(false);
-      return;
+      if (error) throw error;
+
+      setCategorias((atual) => [
+        ...atual,
+        data
+      ]);
+
+      setNovaCategoria('');
+    } catch (error) {
+      console.error(error);
+
+      setErro(
+        `Erro: ${error?.message || 'Não foi possível criar a categoria.'}`
+      );
     }
 
-    setCategorias((atual) => [...atual, data]);
-    setNovaCategoria('');
     setSalvando(false);
   }
 
@@ -204,61 +254,77 @@ export default function EditorRestaurante() {
 
     if (!nome || !nome.trim()) return;
 
-    const { data, error } = await supabase
-      .from('categories')
-      .update({
-        name: nome.trim()
-      })
-      .eq('id', categoria.id)
-      .eq('restaurant_id', id)
-      .select()
-      .single();
+    setErro('');
 
-    if (error) {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update({
+          name: nome.trim()
+        })
+        .eq('id', categoria.id)
+        .eq('restaurant_id', id);
+
+      if (error) throw error;
+
+      setCategorias((atual) =>
+        atual.map((item) =>
+          item.id === categoria.id
+            ? {
+                ...item,
+                name: nome.trim()
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error(error);
       setErro(`Erro: ${error.message}`);
-      return;
     }
-
-    setCategorias((atual) =>
-      atual.map((item) =>
-        item.id === categoria.id ? data : item
-      )
-    );
   }
 
   async function excluirCategoria(categoria) {
-    if (
-      !window.confirm(
-        `Excluir a categoria "${categoria.name}"?`
-      )
-    ) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', categoria.id)
-      .eq('restaurant_id', id);
-
-    if (error) {
-      setErro(`Erro: ${error.message}`);
-      return;
-    }
-
-    setCategorias((atual) =>
-      atual.filter((item) => item.id !== categoria.id)
+    const confirmar = window.confirm(
+      `Excluir a categoria "${categoria.name}"?`
     );
+
+    if (!confirmar) return;
+
+    setErro('');
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoria.id)
+        .eq('restaurant_id', id);
+
+      if (error) throw error;
+
+      setCategorias((atual) =>
+        atual.filter(
+          (item) => item.id !== categoria.id
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      setErro(`Erro: ${error.message}`);
+    }
   }
 
-  // =========================
-  // UPLOAD
-  // =========================
+  // ============================================================
+  // UPLOAD DE IMAGENS
+  // ============================================================
 
-  async function uploadImagem(file, pasta = 'produtos') {
+  async function uploadImagem(
+    file,
+    pasta = 'produtos'
+  ) {
     if (!file) return null;
 
-    if (file.size > 5 * 1024 * 1024) {
+    const limite = 5 * 1024 * 1024;
+
+    if (file.size > limite) {
       throw new Error(
         'A imagem deve ter no máximo 5 MB.'
       );
@@ -276,42 +342,53 @@ export default function EditorRestaurante() {
       );
     }
 
-    const extensao =
-      file.type === 'image/png'
-        ? 'png'
-        : file.type === 'image/webp'
-        ? 'webp'
-        : 'jpg';
+    let extensao = 'jpg';
+
+    if (file.type === 'image/png') {
+      extensao = 'png';
+    }
+
+    if (file.type === 'image/webp') {
+      extensao = 'webp';
+    }
 
     const nomeArquivo =
       `${id}/${pasta}/${crypto.randomUUID()}.${extensao}`;
 
-    const arrayBuffer = await file.arrayBuffer();
-
-    const { data, error } = await supabase.storage
-      .from('product-images')
-      .upload(nomeArquivo, arrayBuffer, {
-        contentType: file.type,
-        cacheControl: '3600',
-        upsert: false
-      });
+    const { data, error } =
+      await supabase.storage
+        .from('product-images')
+        .upload(nomeArquivo, file, {
+          contentType: file.type,
+          cacheControl: '3600',
+          upsert: false
+        });
 
     if (error) {
+      console.error('Erro upload:', error);
+
       throw new Error(
         `Falha ao enviar imagem: ${error.message}`
       );
     }
 
-    const { data: publicData } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(data.path);
+    const { data: publicData } =
+      supabase.storage
+        .from('product-images')
+        .getPublicUrl(data.path);
+
+    if (!publicData?.publicUrl) {
+      throw new Error(
+        'Imagem enviada, mas não foi possível gerar a URL.'
+      );
+    }
 
     return publicData.publicUrl;
   }
 
-  // =========================
+  // ============================================================
   // PRODUTOS
-  // =========================
+  // ============================================================
 
   async function criarProduto(e) {
     e.preventDefault();
@@ -328,6 +405,21 @@ export default function EditorRestaurante() {
     setErro('');
 
     try {
+      const preco = Number(
+        precoProduto
+          .replace(/\./g, '')
+          .replace(',', '.')
+      );
+
+      if (
+        Number.isNaN(preco) ||
+        preco < 0
+      ) {
+        throw new Error(
+          'Digite um preço válido.'
+        );
+      }
+
       let imageUrl = null;
 
       if (fotoProduto) {
@@ -337,19 +429,12 @@ export default function EditorRestaurante() {
         );
       }
 
-      const preco = Number(
-        precoProduto.replace(',', '.')
-      );
-
-      if (Number.isNaN(preco) || preco < 0) {
-        throw new Error('Digite um preço válido.');
-      }
-
       const { data, error } = await supabase
         .from('products')
         .insert({
           restaurant_id: id,
-          category_id: categoriaProduto || null,
+          category_id:
+            categoriaProduto || null,
           name: nomeProduto.trim(),
           description:
             descricaoProduto.trim() || null,
@@ -364,7 +449,10 @@ export default function EditorRestaurante() {
 
       if (error) throw error;
 
-      setProdutos((atual) => [...atual, data]);
+      setProdutos((atual) => [
+        ...atual,
+        data
+      ]);
 
       setNomeProduto('');
       setDescricaoProduto('');
@@ -374,71 +462,97 @@ export default function EditorRestaurante() {
       setDestaqueProduto(false);
 
       const input =
-        document.getElementById('fotoProduto');
+        document.getElementById(
+          'fotoProduto'
+        );
 
-      if (input) input.value = '';
+      if (input) {
+        input.value = '';
+      }
     } catch (error) {
       console.error(error);
-      setErro(`Erro: ${error.message}`);
+
+      setErro(
+        `Erro: ${
+          error?.message ||
+          'Não foi possível cadastrar o produto.'
+        }`
+      );
     }
 
     setSalvando(false);
   }
 
   async function alternarProduto(produto) {
-    const { data, error } = await supabase
-      .from('products')
-      .update({
-        active: !produto.active
-      })
-      .eq('id', produto.id)
-      .eq('restaurant_id', id)
-      .select()
-      .single();
+    setErro('');
 
-    if (error) {
+    const novoEstado = !produto.active;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          active: novoEstado,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', produto.id)
+        .eq('restaurant_id', id);
+
+      if (error) throw error;
+
+      setProdutos((atual) =>
+        atual.map((item) =>
+          item.id === produto.id
+            ? {
+                ...item,
+                active: novoEstado
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error(error);
       setErro(`Erro: ${error.message}`);
-      return;
     }
-
-    setProdutos((atual) =>
-      atual.map((item) =>
-        item.id === produto.id ? data : item
-      )
-    );
   }
 
   async function excluirProduto(produto) {
-    if (
-      !window.confirm(
-        `Excluir o produto "${produto.name}"?`
-      )
-    ) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', produto.id)
-      .eq('restaurant_id', id);
-
-    if (error) {
-      setErro(`Erro: ${error.message}`);
-      return;
-    }
-
-    setProdutos((atual) =>
-      atual.filter((item) => item.id !== produto.id)
+    const confirmar = window.confirm(
+      `Excluir o produto "${produto.name}"?`
     );
+
+    if (!confirmar) return;
+
+    setErro('');
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', produto.id)
+        .eq('restaurant_id', id);
+
+      if (error) throw error;
+
+      setProdutos((atual) =>
+        atual.filter(
+          (item) => item.id !== produto.id
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      setErro(`Erro: ${error.message}`);
+    }
   }
 
-  // =========================
+  // ============================================================
   // ADICIONAIS
-  // =========================
+  // ============================================================
 
   async function criarGrupoAdicional(e) {
-    if (e?.preventDefault) e.preventDefault();
+    if (e?.preventDefault) {
+      e.preventDefault();
+    }
 
     if (
       !produtoAdicional ||
@@ -451,41 +565,46 @@ export default function EditorRestaurante() {
     setSalvando(true);
     setErro('');
 
-    const maximo = Math.max(
-      1,
-      Number(maxSelecoes) || 1
-    );
+    try {
+      const maximo = Math.max(
+        1,
+        Number(maxSelecoes) || 1
+      );
 
-    const { data, error } = await supabase
-      .from('addon_groups')
-      .insert({
-        product_id: produtoAdicional,
-        name: nomeGrupo.trim(),
-        required: grupoObrigatorio,
-        min_select: grupoObrigatorio ? 1 : 0,
-        max_select: maximo,
-        sort_order: gruposAdicionais.filter(
-          (grupo) =>
-            grupo.product_id === produtoAdicional
-        ).length
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('addon_groups')
+        .insert({
+          product_id: produtoAdicional,
+          name: nomeGrupo.trim(),
+          required: grupoObrigatorio,
+          min_select:
+            grupoObrigatorio ? 1 : 0,
+          max_select: maximo,
+          sort_order:
+            gruposAdicionais.filter(
+              (grupo) =>
+                grupo.product_id ===
+                produtoAdicional
+            ).length
+        })
+        .select()
+        .single();
 
-    if (error) {
+      if (error) throw error;
+
+      setGruposAdicionais((atual) => [
+        ...atual,
+        data
+      ]);
+
+      setNomeGrupo('');
+      setGrupoObrigatorio(false);
+      setMaxSelecoes('1');
+    } catch (error) {
+      console.error(error);
       setErro(`Erro: ${error.message}`);
-      setSalvando(false);
-      return;
     }
 
-    setGruposAdicionais((atual) => [
-      ...atual,
-      data
-    ]);
-
-    setNomeGrupo('');
-    setGrupoObrigatorio(false);
-    setMaxSelecoes('1');
     setSalvando(false);
   }
 
@@ -501,117 +620,159 @@ export default function EditorRestaurante() {
     setSalvando(true);
     setErro('');
 
-    const preco = Number(
-      (precoAdicional || '0').replace(',', '.')
-    );
+    try {
+      const preco = Number(
+        (precoAdicional || '0')
+          .replace(/\./g, '')
+          .replace(',', '.')
+      );
 
-    if (Number.isNaN(preco) || preco < 0) {
-      setErro('Digite um preço válido.');
-      setSalvando(false);
-      return;
-    }
+      if (
+        Number.isNaN(preco) ||
+        preco < 0
+      ) {
+        throw new Error(
+          'Digite um preço válido.'
+        );
+      }
 
-    const { data, error } = await supabase
-      .from('addons')
-      .insert({
-        group_id: grupoId,
-        name: nomeAdicional.trim(),
-        price: preco,
-        active: true,
-        sort_order: adicionais.filter(
-          (item) => item.group_id === grupoId
-        ).length
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('addons')
+        .insert({
+          group_id: grupoId,
+          name: nomeAdicional.trim(),
+          price: preco,
+          active: true,
+          sort_order:
+            adicionais.filter(
+              (item) =>
+                item.group_id === grupoId
+            ).length
+        })
+        .select()
+        .single();
 
-    if (error) {
+      if (error) throw error;
+
+      setAdicionais((atual) => [
+        ...atual,
+        data
+      ]);
+
+      setGrupoSelecionado(grupoId);
+      setNomeAdicional('');
+      setPrecoAdicional('');
+    } catch (error) {
+      console.error(error);
       setErro(`Erro: ${error.message}`);
-      setSalvando(false);
-      return;
     }
 
-    setAdicionais((atual) => [...atual, data]);
-
-    setGrupoSelecionado(grupoId);
-    setNomeAdicional('');
-    setPrecoAdicional('');
     setSalvando(false);
   }
 
   async function excluirGrupoAdicional(grupo) {
-    if (
-      !window.confirm(`Excluir "${grupo.name}"?`)
-    ) {
-      return;
-    }
+    const confirmar = window.confirm(
+      `Excluir "${grupo.name}"?`
+    );
 
-    const { error } = await supabase
-      .from('addon_groups')
-      .delete()
-      .eq('id', grupo.id);
+    if (!confirmar) return;
 
-    if (error) {
+    setErro('');
+
+    try {
+      const { error } = await supabase
+        .from('addon_groups')
+        .delete()
+        .eq('id', grupo.id);
+
+      if (error) throw error;
+
+      setGruposAdicionais((atual) =>
+        atual.filter(
+          (item) => item.id !== grupo.id
+        )
+      );
+
+      setAdicionais((atual) =>
+        atual.filter(
+          (item) =>
+            item.group_id !== grupo.id
+        )
+      );
+    } catch (error) {
+      console.error(error);
       setErro(`Erro: ${error.message}`);
-      return;
     }
-
-    setGruposAdicionais((atual) =>
-      atual.filter((item) => item.id !== grupo.id)
-    );
-
-    setAdicionais((atual) =>
-      atual.filter(
-        (item) => item.group_id !== grupo.id
-      )
-    );
   }
 
   async function excluirAdicional(adicional) {
-    if (
-      !window.confirm(
-        `Excluir "${adicional.name}"?`
-      )
-    ) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from('addons')
-      .delete()
-      .eq('id', adicional.id);
-
-    if (error) {
-      setErro(`Erro: ${error.message}`);
-      return;
-    }
-
-    setAdicionais((atual) =>
-      atual.filter(
-        (item) => item.id !== adicional.id
-      )
+    const confirmar = window.confirm(
+      `Excluir "${adicional.name}"?`
     );
+
+    if (!confirmar) return;
+
+    setErro('');
+
+    try {
+      const { error } = await supabase
+        .from('addons')
+        .delete()
+        .eq('id', adicional.id);
+
+      if (error) throw error;
+
+      setAdicionais((atual) =>
+        atual.filter(
+          (item) =>
+            item.id !== adicional.id
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      setErro(`Erro: ${error.message}`);
+    }
   }
 
-  // =========================
+  // ============================================================
   // APARÊNCIA
-  // =========================
+  // ============================================================
 
   function escolherLogo(file) {
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      setErro(
+        'A logo deve ter no máximo 5 MB.'
+      );
+      return;
+    }
+
+    setErro('');
     setLogoArquivo(file);
 
-    const preview = URL.createObjectURL(file);
+    const preview =
+      URL.createObjectURL(file);
+
     setLogoPreview(preview);
   }
 
   function escolherCapa(file) {
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      setErro(
+        'A capa deve ter no máximo 5 MB.'
+      );
+      return;
+    }
+
+    setErro('');
     setCoverArquivo(file);
 
-    const preview = URL.createObjectURL(file);
+    const preview =
+      URL.createObjectURL(file);
+
     setCoverPreview(preview);
   }
 
@@ -639,43 +800,106 @@ export default function EditorRestaurante() {
         );
       }
 
-      const { data, error } = await supabase
+      /*
+        IMPORTANTE:
+        Aqui NÃO usamos .select().single().
+
+        Isso evita o erro:
+        "Cannot coerce the result to a single JSON object"
+      */
+
+      const { error } = await supabase
         .from('restaurants')
         .update({
-          logo_url: novaLogoUrl || null,
-          cover_url: novaCoverUrl || null,
-          primary_color: corPrimaria,
-          secondary_color: corSecundaria,
-          updated_at: new Date().toISOString()
+          logo_url:
+            novaLogoUrl || null,
+          cover_url:
+            novaCoverUrl || null,
+          primary_color:
+            corPrimaria,
+          secondary_color:
+            corSecundaria,
+          updated_at:
+            new Date().toISOString()
         })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      setRestaurante(data);
+      setRestaurante((atual) => ({
+        ...atual,
+        logo_url:
+          novaLogoUrl || null,
+        cover_url:
+          novaCoverUrl || null,
+        primary_color:
+          corPrimaria,
+        secondary_color:
+          corSecundaria
+      }));
 
       setLogoUrl(novaLogoUrl || '');
       setCoverUrl(novaCoverUrl || '');
 
-      setLogoPreview(novaLogoUrl || '');
-      setCoverPreview(novaCoverUrl || '');
+      setLogoPreview(
+        novaLogoUrl || ''
+      );
+
+      setCoverPreview(
+        novaCoverUrl || ''
+      );
 
       setLogoArquivo(null);
       setCoverArquivo(null);
 
-      alert('Aparência salva com sucesso!');
+      const inputLogo =
+        document.getElementById(
+          'logoRestaurante'
+        );
+
+      const inputCapa =
+        document.getElementById(
+          'capaRestaurante'
+        );
+
+      if (inputLogo) {
+        inputLogo.value = '';
+      }
+
+      if (inputCapa) {
+        inputCapa.value = '';
+      }
+
+      alert(
+        'Aparência salva com sucesso!'
+      );
     } catch (error) {
-      console.error(error);
-      setErro(`Erro: ${error.message}`);
+      console.error(
+        'Erro ao salvar aparência:',
+        error
+      );
+
+      setErro(
+        `Erro: ${
+          error?.message ||
+          'Não foi possível salvar a aparência.'
+        }`
+      );
     }
 
     setSalvando(false);
   }
 
+  // ============================================================
+  // UTILIDADES
+  // ============================================================
+
   function dinheiro(valor) {
-    return Number(valor || 0).toLocaleString(
+    return Number(
+      valor || 0
+    ).toLocaleString(
       'pt-BR',
       {
         style: 'currency',
@@ -689,9 +913,9 @@ export default function EditorRestaurante() {
     setErro('');
   }
 
-  // =========================
-  // CARREGANDO
-  // =========================
+  // ============================================================
+  // CARREGAMENTO
+  // ============================================================
 
   if (carregando) {
     return (
@@ -704,14 +928,24 @@ export default function EditorRestaurante() {
   if (!restaurante) {
     return (
       <main style={styles.center}>
-        Restaurante não encontrado.
+        <div>
+          <h2>
+            Restaurante não encontrado.
+          </h2>
+
+          {erro && (
+            <p style={{ color: '#dc2626' }}>
+              {erro}
+            </p>
+          )}
+        </div>
       </main>
     );
   }
 
-  // =========================
-  // APARÊNCIA
-  // =========================
+  // ============================================================
+  // TELA APARÊNCIA
+  // ============================================================
 
   if (tela === 'aparencia') {
     return (
@@ -728,11 +962,13 @@ export default function EditorRestaurante() {
             {restaurante.name.toUpperCase()}
           </p>
 
-          <h1 style={styles.title}>Aparência</h1>
+          <h1 style={styles.title}>
+            Aparência
+          </h1>
 
           <p style={styles.subtitle}>
-            Personalize a identidade visual do seu
-            cardápio.
+            Personalize a identidade visual
+            do seu cardápio.
           </p>
 
           <div style={styles.productForm}>
@@ -740,6 +976,7 @@ export default function EditorRestaurante() {
               Logo do restaurante
 
               <input
+                id="logoRestaurante"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 style={styles.input}
@@ -752,10 +989,12 @@ export default function EditorRestaurante() {
             </label>
 
             {logoPreview && (
-              <div style={styles.logoPreviewBox}>
+              <div
+                style={styles.logoPreviewBox}
+              >
                 <img
                   src={logoPreview}
-                  alt="Logo"
+                  alt="Logo do restaurante"
                   style={styles.logoPreview}
                 />
               </div>
@@ -765,6 +1004,7 @@ export default function EditorRestaurante() {
               Imagem de capa
 
               <input
+                id="capaRestaurante"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 style={styles.input}
@@ -779,14 +1019,14 @@ export default function EditorRestaurante() {
             {coverPreview && (
               <img
                 src={coverPreview}
-                alt="Capa"
+                alt="Capa do restaurante"
                 style={styles.coverPreview}
               />
             )}
 
             <small style={styles.hint}>
-              JPG, PNG ou WebP. Máximo 5 MB por
-              imagem.
+              JPG, PNG ou WebP. Máximo 5 MB
+              por imagem.
             </small>
 
             <label style={styles.label}>
@@ -796,7 +1036,9 @@ export default function EditorRestaurante() {
                 type="color"
                 value={corPrimaria}
                 onChange={(e) =>
-                  setCorPrimaria(e.target.value)
+                  setCorPrimaria(
+                    e.target.value
+                  )
                 }
                 style={styles.colorInput}
               />
@@ -809,7 +1051,9 @@ export default function EditorRestaurante() {
                 type="color"
                 value={corSecundaria}
                 onChange={(e) =>
-                  setCorSecundaria(e.target.value)
+                  setCorSecundaria(
+                    e.target.value
+                  )
                 }
                 style={styles.colorInput}
               />
@@ -818,40 +1062,48 @@ export default function EditorRestaurante() {
             <div
               style={{
                 ...styles.preview,
-                background: corSecundaria
+                background:
+                  corSecundaria
               }}
             >
               {coverPreview && (
                 <img
                   src={coverPreview}
-                  alt=""
+                  alt="Prévia da capa"
                   style={styles.previewCover}
                 />
               )}
 
-              <div style={styles.previewContent}>
+              <div
+                style={styles.previewContent}
+              >
                 {logoPreview && (
                   <img
                     src={logoPreview}
-                    alt=""
+                    alt="Prévia da logo"
                     style={styles.previewLogo}
                   />
                 )}
 
-                <strong style={{ fontSize: 20 }}>
+                <strong
+                  style={{
+                    fontSize: '20px'
+                  }}
+                >
                   {restaurante.name}
                 </strong>
 
                 <p>
-                  Veja como a identidade do seu
-                  cardápio ficará.
+                  Veja como a identidade do
+                  seu cardápio ficará.
                 </p>
 
                 <button
                   type="button"
                   style={{
                     ...styles.previewButton,
-                    background: corPrimaria
+                    background:
+                      corPrimaria
                   }}
                 >
                   Adicionar ao pedido
@@ -868,7 +1120,8 @@ export default function EditorRestaurante() {
             <button
               style={{
                 ...styles.primary,
-                background: corPrimaria
+                background:
+                  corPrimaria
               }}
               type="button"
               onClick={salvarAparencia}
@@ -884,9 +1137,9 @@ export default function EditorRestaurante() {
     );
   }
 
-  // =========================
-  // CATEGORIAS
-  // =========================
+  // ============================================================
+  // TELA CATEGORIAS
+  // ============================================================
 
   if (tela === 'categorias') {
     return (
@@ -908,7 +1161,8 @@ export default function EditorRestaurante() {
           </h1>
 
           <p style={styles.subtitle}>
-            Organize os produtos do seu cardápio.
+            Organize os produtos do seu
+            cardápio.
           </p>
 
           <form
@@ -919,7 +1173,9 @@ export default function EditorRestaurante() {
               style={styles.input}
               value={novaCategoria}
               onChange={(e) =>
-                setNovaCategoria(e.target.value)
+                setNovaCategoria(
+                  e.target.value
+                )
               }
               placeholder="Ex.: Pizzas"
             />
@@ -929,7 +1185,9 @@ export default function EditorRestaurante() {
               type="submit"
               disabled={salvando}
             >
-              + Adicionar
+              {salvando
+                ? 'Salvando...'
+                : '+ Adicionar'}
             </button>
           </form>
 
@@ -940,47 +1198,63 @@ export default function EditorRestaurante() {
           )}
 
           <div style={styles.list}>
-            {categorias.map((categoria) => (
-              <div
-                key={categoria.id}
-                style={styles.listItem}
-              >
-                <strong>
-                  {categoria.name}
-                </strong>
-
-                <div style={styles.actions}>
-                  <button
-                    style={styles.secondary}
-                    type="button"
-                    onClick={() =>
-                      renomearCategoria(categoria)
-                    }
-                  >
-                    Editar
-                  </button>
-
-                  <button
-                    style={styles.danger}
-                    type="button"
-                    onClick={() =>
-                      excluirCategoria(categoria)
-                    }
-                  >
-                    Excluir
-                  </button>
-                </div>
+            {categorias.length === 0 && (
+              <div style={styles.empty}>
+                Nenhuma categoria cadastrada.
               </div>
-            ))}
+            )}
+
+            {categorias.map(
+              (categoria) => (
+                <div
+                  key={categoria.id}
+                  style={styles.listItem}
+                >
+                  <strong>
+                    {categoria.name}
+                  </strong>
+
+                  <div
+                    style={styles.actions}
+                  >
+                    <button
+                      style={
+                        styles.secondary
+                      }
+                      type="button"
+                      onClick={() =>
+                        renomearCategoria(
+                          categoria
+                        )
+                      }
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      style={styles.danger}
+                      type="button"
+                      onClick={() =>
+                        excluirCategoria(
+                          categoria
+                        )
+                      }
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              )
+            )}
           </div>
         </section>
       </main>
     );
   }
 
-  // =========================
-  // PRODUTOS
-  // =========================
+  // ============================================================
+  // TELA PRODUTOS
+  // ============================================================
 
   if (tela === 'produtos') {
     return (
@@ -1020,7 +1294,9 @@ export default function EditorRestaurante() {
                 style={styles.input}
                 value={nomeProduto}
                 onChange={(e) =>
-                  setNomeProduto(e.target.value)
+                  setNomeProduto(
+                    e.target.value
+                  )
                 }
                 placeholder="Ex.: Pizza de Frango"
                 required
@@ -1043,14 +1319,16 @@ export default function EditorRestaurante() {
                   Sem categoria
                 </option>
 
-                {categorias.map((categoria) => (
-                  <option
-                    key={categoria.id}
-                    value={categoria.id}
-                  >
-                    {categoria.name}
-                  </option>
-                ))}
+                {categorias.map(
+                  (categoria) => (
+                    <option
+                      key={categoria.id}
+                      value={categoria.id}
+                    >
+                      {categoria.name}
+                    </option>
+                  )
+                )}
               </select>
             </label>
 
@@ -1076,7 +1354,9 @@ export default function EditorRestaurante() {
                 style={styles.input}
                 value={precoProduto}
                 onChange={(e) =>
-                  setPrecoProduto(e.target.value)
+                  setPrecoProduto(
+                    e.target.value
+                  )
                 }
                 placeholder="Ex.: 39,90"
                 inputMode="decimal"
@@ -1094,7 +1374,8 @@ export default function EditorRestaurante() {
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) =>
                   setFotoProduto(
-                    e.target.files?.[0] || null
+                    e.target.files?.[0] ||
+                      null
                   )
                 }
               />
@@ -1104,7 +1385,9 @@ export default function EditorRestaurante() {
               JPG, PNG ou WebP. Máximo 5 MB.
             </small>
 
-            <label style={styles.checkLabel}>
+            <label
+              style={styles.checkLabel}
+            >
               <input
                 type="checkbox"
                 checked={destaqueProduto}
@@ -1140,88 +1423,138 @@ export default function EditorRestaurante() {
             {produtos.length})
           </h2>
 
+          {produtos.length === 0 && (
+            <div style={styles.empty}>
+              Nenhum produto cadastrado.
+            </div>
+          )}
+
           <div style={styles.productGrid}>
-            {produtos.map((produto) => (
-              <article
-                key={produto.id}
-                style={styles.productCard}
-              >
-                {produto.image_url ? (
-                  <img
-                    src={produto.image_url}
-                    alt={produto.name}
-                    style={styles.productImage}
-                  />
-                ) : (
-                  <div style={styles.noImage}>
-                    🍕
-                  </div>
-                )}
-
-                <div style={styles.productBody}>
-                  <div style={styles.productTop}>
-                    <strong
-                      style={styles.productName}
+            {produtos.map(
+              (produto) => (
+                <article
+                  key={produto.id}
+                  style={
+                    styles.productCard
+                  }
+                >
+                  {produto.image_url ? (
+                    <img
+                      src={
+                        produto.image_url
+                      }
+                      alt={produto.name}
+                      style={
+                        styles.productImage
+                      }
+                    />
+                  ) : (
+                    <div
+                      style={
+                        styles.noImage
+                      }
                     >
-                      {produto.name}
-                    </strong>
-
-                    {!produto.active && (
-                      <span
-                        style={styles.inactive}
-                      >
-                        Inativo
-                      </span>
-                    )}
-                  </div>
-
-                  {produto.description && (
-                    <p
-                      style={styles.description}
-                    >
-                      {produto.description}
-                    </p>
+                      🍕
+                    </div>
                   )}
 
-                  <strong style={styles.price}>
-                    {dinheiro(produto.price)}
-                  </strong>
-
-                  <div style={styles.actions}>
-                    <button
-                      style={styles.secondary}
-                      type="button"
-                      onClick={() =>
-                        alternarProduto(produto)
+                  <div
+                    style={
+                      styles.productBody
+                    }
+                  >
+                    <div
+                      style={
+                        styles.productTop
                       }
                     >
-                      {produto.active
-                        ? 'Desativar'
-                        : 'Ativar'}
-                    </button>
+                      <strong
+                        style={
+                          styles.productName
+                        }
+                      >
+                        {produto.name}
+                      </strong>
 
-                    <button
-                      style={styles.danger}
-                      type="button"
-                      onClick={() =>
-                        excluirProduto(produto)
+                      {!produto.active && (
+                        <span
+                          style={
+                            styles.inactive
+                          }
+                        >
+                          Inativo
+                        </span>
+                      )}
+                    </div>
+
+                    {produto.description && (
+                      <p
+                        style={
+                          styles.description
+                        }
+                      >
+                        {
+                          produto.description
+                        }
+                      </p>
+                    )}
+
+                    <strong
+                      style={styles.price}
+                    >
+                      {dinheiro(
+                        produto.price
+                      )}
+                    </strong>
+
+                    <div
+                      style={
+                        styles.actions
                       }
                     >
-                      Excluir
-                    </button>
+                      <button
+                        style={
+                          styles.secondary
+                        }
+                        type="button"
+                        onClick={() =>
+                          alternarProduto(
+                            produto
+                          )
+                        }
+                      >
+                        {produto.active
+                          ? 'Desativar'
+                          : 'Ativar'}
+                      </button>
+
+                      <button
+                        style={
+                          styles.danger
+                        }
+                        type="button"
+                        onClick={() =>
+                          excluirProduto(
+                            produto
+                          )
+                        }
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              )
+            )}
           </div>
         </section>
       </main>
     );
   }
 
-  // =========================
-  // ADICIONAIS
-  // =========================
+  // ============================================================
+  // TELA ADICIONAIS
+  // ============================================================
 
   if (tela === 'adicionais') {
     return (
@@ -1243,7 +1576,8 @@ export default function EditorRestaurante() {
           </h1>
 
           <p style={styles.subtitle}>
-            Crie bordas, sabores e complementos.
+            Crie bordas, sabores e
+            complementos.
           </p>
 
           <div style={styles.productForm}>
@@ -1267,14 +1601,16 @@ export default function EditorRestaurante() {
                   Selecione um produto
                 </option>
 
-                {produtos.map((produto) => (
-                  <option
-                    key={produto.id}
-                    value={produto.id}
-                  >
-                    {produto.name}
-                  </option>
-                ))}
+                {produtos.map(
+                  (produto) => (
+                    <option
+                      key={produto.id}
+                      value={produto.id}
+                    >
+                      {produto.name}
+                    </option>
+                  )
+                )}
               </select>
             </label>
 
@@ -1285,13 +1621,17 @@ export default function EditorRestaurante() {
                 style={styles.input}
                 value={nomeGrupo}
                 onChange={(e) =>
-                  setNomeGrupo(e.target.value)
+                  setNomeGrupo(
+                    e.target.value
+                  )
                 }
                 placeholder="Ex.: Escolha a borda"
               />
             </label>
 
-            <label style={styles.checkLabel}>
+            <label
+              style={styles.checkLabel}
+            >
               <input
                 type="checkbox"
                 checked={grupoObrigatorio}
@@ -1314,7 +1654,9 @@ export default function EditorRestaurante() {
                 min="1"
                 value={maxSelecoes}
                 onChange={(e) =>
-                  setMaxSelecoes(e.target.value)
+                  setMaxSelecoes(
+                    e.target.value
+                  )
                 }
               />
             </label>
@@ -1322,7 +1664,9 @@ export default function EditorRestaurante() {
             <button
               style={styles.primary}
               type="button"
-              onClick={criarGrupoAdicional}
+              onClick={
+                criarGrupoAdicional
+              }
               disabled={salvando}
             >
               {salvando
@@ -1342,164 +1686,220 @@ export default function EditorRestaurante() {
             {gruposAdicionais.length})
           </h2>
 
+          {gruposAdicionais.length ===
+            0 && (
+            <div style={styles.empty}>
+              Nenhum grupo de adicionais
+              cadastrado.
+            </div>
+          )}
+
           <div style={styles.list}>
-            {gruposAdicionais.map((grupo) => {
-              const produto = produtos.find(
-                (item) =>
-                  item.id === grupo.product_id
-              );
+            {gruposAdicionais.map(
+              (grupo) => {
+                const produto =
+                  produtos.find(
+                    (item) =>
+                      item.id ===
+                      grupo.product_id
+                  );
 
-              const itensGrupo =
-                adicionais.filter(
-                  (item) =>
-                    item.group_id === grupo.id
-                );
+                const itensGrupo =
+                  adicionais.filter(
+                    (item) =>
+                      item.group_id ===
+                      grupo.id
+                  );
 
-              return (
-                <div
-                  key={grupo.id}
-                  style={styles.productForm}
-                >
-                  <div>
-                    <strong
-                      style={styles.productName}
-                    >
-                      {grupo.name}
-                    </strong>
-
-                    <p
-                      style={styles.description}
-                    >
-                      Produto:{' '}
-                      {produto?.name || 'Produto'}
-                    </p>
-
-                    <small style={styles.hint}>
-                      {grupo.required
-                        ? 'Obrigatório'
-                        : 'Opcional'}
-                      {' • '}
-                      Máximo: {grupo.max_select}
-                    </small>
-                  </div>
-
-                  <div style={styles.addonForm}>
-                    <input
-                      style={styles.input}
-                      value={
-                        grupoSelecionado ===
-                        grupo.id
-                          ? nomeAdicional
-                          : ''
-                      }
-                      onFocus={() =>
-                        setGrupoSelecionado(
-                          grupo.id
-                        )
-                      }
-                      onChange={(e) => {
-                        setGrupoSelecionado(
-                          grupo.id
-                        );
-                        setNomeAdicional(
-                          e.target.value
-                        );
-                      }}
-                      placeholder="Ex.: Catupiry"
-                    />
-
-                    <input
-                      style={styles.input}
-                      value={
-                        grupoSelecionado ===
-                        grupo.id
-                          ? precoAdicional
-                          : ''
-                      }
-                      onFocus={() =>
-                        setGrupoSelecionado(
-                          grupo.id
-                        )
-                      }
-                      onChange={(e) => {
-                        setGrupoSelecionado(
-                          grupo.id
-                        );
-                        setPrecoAdicional(
-                          e.target.value
-                        );
-                      }}
-                      placeholder="Preço"
-                      inputMode="decimal"
-                    />
-
-                    <button
-                      style={styles.primary}
-                      type="button"
-                      onClick={() =>
-                        criarAdicional(grupo.id)
-                      }
-                    >
-                      + Adicionar
-                    </button>
-                  </div>
-
-                  {itensGrupo.map(
-                    (adicional) => (
-                      <div
-                        key={adicional.id}
-                        style={styles.listItem}
-                      >
-                        <div>
-                          <strong>
-                            {adicional.name}
-                          </strong>
-
-                          <div
-                            style={styles.price}
-                          >
-                            {dinheiro(
-                              adicional.price
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          style={styles.danger}
-                          type="button"
-                          onClick={() =>
-                            excluirAdicional(
-                              adicional
-                            )
-                          }
-                        >
-                          Excluir
-                        </button>
-                      </div>
-                    )
-                  )}
-
-                  <button
-                    style={styles.danger}
-                    type="button"
-                    onClick={() =>
-                      excluirGrupoAdicional(grupo)
+                return (
+                  <div
+                    key={grupo.id}
+                    style={
+                      styles.productForm
                     }
                   >
-                    Excluir grupo
-                  </button>
-                </div>
-              );
-            })}
+                    <div>
+                      <strong
+                        style={
+                          styles.productName
+                        }
+                      >
+                        {grupo.name}
+                      </strong>
+
+                      <p
+                        style={
+                          styles.description
+                        }
+                      >
+                        Produto:{' '}
+                        {produto?.name ||
+                          'Produto'}
+                      </p>
+
+                      <small
+                        style={
+                          styles.hint
+                        }
+                      >
+                        {grupo.required
+                          ? 'Obrigatório'
+                          : 'Opcional'}
+                        {' • '}
+                        Máximo:{' '}
+                        {
+                          grupo.max_select
+                        }
+                      </small>
+                    </div>
+
+                    <div
+                      style={
+                        styles.addonForm
+                      }
+                    >
+                      <input
+                        style={
+                          styles.input
+                        }
+                        value={
+                          grupoSelecionado ===
+                          grupo.id
+                            ? nomeAdicional
+                            : ''
+                        }
+                        onFocus={() =>
+                          setGrupoSelecionado(
+                            grupo.id
+                          )
+                        }
+                        onChange={(e) => {
+                          setGrupoSelecionado(
+                            grupo.id
+                          );
+
+                          setNomeAdicional(
+                            e.target.value
+                          );
+                        }}
+                        placeholder="Ex.: Catupiry"
+                      />
+
+                      <input
+                        style={
+                          styles.input
+                        }
+                        value={
+                          grupoSelecionado ===
+                          grupo.id
+                            ? precoAdicional
+                            : ''
+                        }
+                        onFocus={() =>
+                          setGrupoSelecionado(
+                            grupo.id
+                          )
+                        }
+                        onChange={(e) => {
+                          setGrupoSelecionado(
+                            grupo.id
+                          );
+
+                          setPrecoAdicional(
+                            e.target.value
+                          );
+                        }}
+                        placeholder="Preço"
+                        inputMode="decimal"
+                      />
+
+                      <button
+                        style={
+                          styles.primary
+                        }
+                        type="button"
+                        onClick={() =>
+                          criarAdicional(
+                            grupo.id
+                          )
+                        }
+                        disabled={
+                          salvando
+                        }
+                      >
+                        + Adicionar
+                      </button>
+                    </div>
+
+                    {itensGrupo.map(
+                      (adicional) => (
+                        <div
+                          key={
+                            adicional.id
+                          }
+                          style={
+                            styles.listItem
+                          }
+                        >
+                          <div>
+                            <strong>
+                              {
+                                adicional.name
+                              }
+                            </strong>
+
+                            <div
+                              style={
+                                styles.price
+                              }
+                            >
+                              {dinheiro(
+                                adicional.price
+                              )}
+                            </div>
+                          </div>
+
+                          <button
+                            style={
+                              styles.danger
+                            }
+                            type="button"
+                            onClick={() =>
+                              excluirAdicional(
+                                adicional
+                              )
+                            }
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      )
+                    )}
+
+                    <button
+                      style={styles.danger}
+                      type="button"
+                      onClick={() =>
+                        excluirGrupoAdicional(
+                          grupo
+                        )
+                      }
+                    >
+                      Excluir grupo
+                    </button>
+                  </div>
+                );
+              }
+            )}
           </div>
         </section>
       </main>
     );
   }
 
-  // =========================
+  // ============================================================
   // INÍCIO DO EDITOR
-  // =========================
+  // ============================================================
 
   return (
     <main style={styles.page}>
@@ -1524,15 +1924,17 @@ export default function EditorRestaurante() {
             </h1>
 
             <p style={styles.subtitle}>
-              Monte e personalize o cardápio deste
-              restaurante.
+              Monte e personalize o cardápio
+              deste restaurante.
             </p>
           </div>
 
           <span style={styles.badge}>
-            {restaurante.status === 'active'
+            {restaurante.status ===
+            'active'
               ? 'Ativo'
-              : restaurante.status === 'paused'
+              : restaurante.status ===
+                'paused'
               ? 'Pausado'
               : 'Demonstração'}
           </span>
@@ -1545,29 +1947,45 @@ export default function EditorRestaurante() {
               setTela('categorias')
             }
           >
-            <span style={styles.icon}>📂</span>
+            <span style={styles.icon}>
+              📂
+            </span>
 
-            <strong style={styles.cardTitle}>
+            <strong
+              style={styles.cardTitle}
+            >
               Categorias
             </strong>
 
-            <small style={styles.cardText}>
-              {categorias.length} cadastradas
+            <small
+              style={styles.cardText}
+            >
+              {categorias.length}{' '}
+              cadastradas
             </small>
           </button>
 
           <button
             style={styles.card}
-            onClick={() => setTela('produtos')}
+            onClick={() =>
+              setTela('produtos')
+            }
           >
-            <span style={styles.icon}>🍕</span>
+            <span style={styles.icon}>
+              🍕
+            </span>
 
-            <strong style={styles.cardTitle}>
+            <strong
+              style={styles.cardTitle}
+            >
               Produtos
             </strong>
 
-            <small style={styles.cardText}>
-              {produtos.length} cadastrados
+            <small
+              style={styles.cardText}
+            >
+              {produtos.length}{' '}
+              cadastrados
             </small>
           </button>
 
@@ -1577,15 +1995,21 @@ export default function EditorRestaurante() {
               setTela('adicionais')
             }
           >
-            <span style={styles.icon}>➕</span>
+            <span style={styles.icon}>
+              ➕
+            </span>
 
-            <strong style={styles.cardTitle}>
+            <strong
+              style={styles.cardTitle}
+            >
               Adicionais
             </strong>
 
-            <small style={styles.cardText}>
-              {gruposAdicionais.length} grupos
-              cadastrados
+            <small
+              style={styles.cardText}
+            >
+              {gruposAdicionais.length}{' '}
+              grupos cadastrados
             </small>
           </button>
 
@@ -1595,13 +2019,19 @@ export default function EditorRestaurante() {
               setTela('aparencia')
             }
           >
-            <span style={styles.icon}>🎨</span>
+            <span style={styles.icon}>
+              🎨
+            </span>
 
-            <strong style={styles.cardTitle}>
+            <strong
+              style={styles.cardTitle}
+            >
               Aparência
             </strong>
 
-            <small style={styles.cardText}>
+            <small
+              style={styles.cardText}
+            >
               Logo, capa e cores.
             </small>
           </button>
@@ -1623,7 +2053,11 @@ export default function EditorRestaurante() {
   );
 }
 
-function EditorCard({ icon, title, text }) {
+function EditorCard({
+  icon,
+  title,
+  text
+}) {
   return (
     <button style={styles.card}>
       <span style={styles.icon}>
@@ -1660,6 +2094,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: '20px',
     fontFamily: 'Arial, sans-serif'
   },
 
@@ -1825,7 +2260,8 @@ const styles = {
     color: '#6d5dfc',
     borderRadius: '9px',
     padding: '9px 12px',
-    fontWeight: '700'
+    fontWeight: '700',
+    cursor: 'pointer'
   },
 
   danger: {
@@ -1834,7 +2270,8 @@ const styles = {
     color: '#dc2626',
     borderRadius: '9px',
     padding: '9px 12px',
-    fontWeight: '700'
+    fontWeight: '700',
+    cursor: 'pointer'
   },
 
   error: {
@@ -1843,6 +2280,13 @@ const styles = {
     padding: '13px',
     borderRadius: '11px',
     margin: '15px 0'
+  },
+
+  empty: {
+    background: '#fff',
+    color: '#6b7280',
+    padding: '20px',
+    borderRadius: '15px'
   },
 
   list: {
