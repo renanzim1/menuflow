@@ -2676,5 +2676,132 @@ const styles = {
     inset: 0,
     borderRadius: '28px',
     border: '3px solid #6d5dfc',
-    boxShadow:
-      'inset
+    boxShadow: 'inset 0 0 0 5px rgba(255,255,255,0.45)',
+pointerEvents: 'none',
+zIndex: 3
+},
+    logoControls: {
+    display: 'grid',
+    gap: '18px'
+  },
+
+  sliderLabel: {
+    display: 'grid',
+    gap: '10px',
+    fontSize: '14px'
+  },
+
+  sliderHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px'
+  },
+
+  range: {
+    width: '100%',
+    accentColor: '#6d5dfc'
+  },
+
+  logoHelp: {
+    background: '#eef2ff',
+    color: '#4f46e5',
+    borderRadius: '12px',
+    padding: '12px',
+    lineHeight: '1.5'
+  },
+
+  coverPreview: {
+    width: '100%',
+    height: '200px',
+    objectFit: 'cover',
+    borderRadius: '16px'
+  },
+
+  preview: {
+    overflow: 'hidden',
+    borderRadius: '18px',
+    color: '#fff'
+  },
+
+  previewCover: {
+    width: '100%',
+    height: '150px',
+    objectFit: 'cover',
+    display: 'block'
+  },
+
+  previewContent: {
+    padding: '22px'
+  },
+
+  previewLogoBox: {
+    width: '80px',
+    height: '80px',
+    position: 'relative',
+    overflow: 'hidden',
+    background: '#fff',
+    borderRadius: '16px',
+    marginBottom: '15px'
+  },
+
+  previewLogoAdjusted: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    objectPosition: 'center',
+    transformOrigin: 'center center'
+  },
+
+  previewButton: {
+    border: 0,
+    padding: '12px 18px',
+    borderRadius: '10px',
+    color: '#fff',
+    fontWeight: '800'
+  },
+
+  moneyField: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid #d1d5db',
+    borderRadius: '11px',
+    overflow: 'hidden',
+    background: '#fff'
+  },
+
+  moneyPrefix: {
+    padding: '14px',
+    background: '#f3f4f6',
+    color: '#374151',
+    fontWeight: '800',
+    borderRight: '1px solid #d1d5db'
+  },
+
+  moneyInput: {
+    width: '100%',
+    border: 0,
+    outline: 'none',
+    padding: '14px',
+    fontSize: '16px'
+  },
+
+  infoPreview: {
+    display: 'grid',
+    gap: '14px',
+    background: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: '16px',
+    padding: '18px'
+  },
+
+  infoRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '20px',
+    paddingTop: '10px',
+    borderTop: '1px solid #e5e7eb'
+  }
+};
